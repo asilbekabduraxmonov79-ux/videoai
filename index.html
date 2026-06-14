@@ -1,1 +1,686 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VideoAI.uz — AI Video Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #08090d;
+      --surface: #111318;
+      --border: #1e2130;
+      --accent: #6c47ff;
+      --accent2: #ff4fcb;
+      --glow: rgba(108,71,255,0.35);
+      --text: #e8eaf2;
+      --muted: #5a5f7a;
+      --success: #22d9a0;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* BACKGROUND GRID */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(108,71,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(108,71,255,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 32px;
+      background: rgba(8,9,13,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .nav-badge {
+      font-size: 11px;
+      background: rgba(108,71,255,0.15);
+      border: 1px solid rgba(108,71,255,0.3);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 80px 24px 48px;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      border: 1px solid rgba(108,71,255,0.3);
+      background: rgba(108,71,255,0.08);
+      padding: 6px 16px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+      letter-spacing: 1px;
+    }
+
+    .hero h1 {
+      font-size: clamp(32px, 6vw, 64px);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      margin-bottom: 16px;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 17px;
+      color: var(--muted);
+      max-width: 480px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+
+    /* PLATFORM SELECTOR */
+    .platform-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      text-align: center;
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+    }
+
+    .platforms {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+
+    .platform-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .platform-btn:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .platform-btn.active {
+      border-color: var(--accent);
+      background: rgba(108,71,255,0.12);
+      color: var(--text);
+      box-shadow: 0 0 16px rgba(108,71,255,0.2);
+    }
+
+    .platform-btn .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* MAIN CARD */
+    .main-card {
+      position: relative;
+      z-index: 1;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 0 60px rgba(108,71,255,0.08);
+    }
+
+    .prompt-area {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      resize: none;
+      min-height: 120px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .prompt-area:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(108,71,255,0.12);
+    }
+
+    .prompt-area::placeholder { color: var(--muted); }
+
+    /* OPTIONS ROW */
+    .options-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .select-box {
+      flex: 1;
+      min-width: 130px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .select-box:focus { border-color: var(--accent); }
+
+    /* GENERATE BTN */
+    .generate-btn {
+      width: 100%;
+      margin-top: 20px;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .generate-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 32px rgba(108,71,255,0.4);
+    }
+
+    .generate-btn:active { transform: translateY(0); }
+    .generate-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* RESULT AREA */
+    .result-area {
+      margin-top: 24px;
+      display: none;
+    }
+
+    .result-area.show { display: block; }
+
+    .result-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+    }
+
+    .video-placeholder {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      aspect-ratio: 16/9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .video-placeholder video {
+      width: 100%;
+      height: 100%;
+      border-radius: 14px;
+      object-fit: cover;
+    }
+
+    /* LOADING SPINNER */
+    .loader {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .loader.show { display: flex; }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loader-text {
+      font-size: 14px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .progress-bar {
+      width: 200px;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    /* CREDITS */
+    .credits-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 20px;
+      padding: 14px 18px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .credits-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .credits-icon {
+      font-size: 18px;
+    }
+
+    .credits-text {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .credits-count {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--success);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .buy-btn {
+      padding: 8px 16px;
+      background: rgba(108,71,255,0.12);
+      border: 1px solid rgba(108,71,255,0.3);
+      border-radius: 8px;
+      color: var(--accent);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .buy-btn:hover {
+      background: rgba(108,71,255,0.2);
+    }
+
+    /* STATS */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 40px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* PLATFORM INFO */
+    .platform-info {
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: rgba(108,71,255,0.06);
+      border: 1px solid rgba(108,71,255,0.15);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 14px;
+      color: var(--text);
+      z-index: 999;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width: 600px) {
+      nav { padding: 14px 16px; }
+      .hero { padding: 48px 16px 32px; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .options-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">VideoAI.uz</div>
+  <div class="nav-badge">BETA v0.1</div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">✦ 4 TA PLATFORMA BITTA JOYDA</div>
+  <h1>Matn yozing,<br/><span>Video oling</span></h1>
+  <p>Kling, Runway, Pika va Hailuo — eng yaxshi AI video generatorlari bitta platformada.</p>
+
+  <!-- PLATFORM SELECTOR -->
+  <div class="platform-label">PLATFORM TANLANG</div>
+  <div class="platforms">
+    <button class="platform-btn active" data-platform="kling" onclick="selectPlatform(this)">
+      <span class="dot" style="background:#ff4fcb"></span> Kling AI
+    </button>
+    <button class="platform-btn" data-platform="runway" onclick="selectPlatform(this)">
+      <span class="dot" style="background:#6c47ff"></span> Runway ML
+    </button>
+    <button class="platform-btn" data-platform="pika" onclick="selectPlatform(this)">
+      <span class="dot" style="background:#22d9a0"></span> Pika Labs
+    </button>
+    <button class="platform-btn" data-platform="hailuo" onclick="selectPlatform(this)">
+      <span class="dot" style="background:#ffd947"></span> Hailuo AI
+    </button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-card">
+  <div class="card">
+
+    <textarea class="prompt-area" id="promptInput"
+      placeholder="Videoni tasvirlab bering... Masalan: Mushuk sekin yaqinlashadi va kishi boshiga tayoq bilan uradi, kulgili animatsiya uslubi..."></textarea>
+
+    <div class="options-row">
+      <select class="select-box" id="duration">
+        <option value="5">⏱ 5 soniya</option>
+        <option value="10">⏱ 10 soniya</option>
+      </select>
+      <select class="select-box" id="aspect">
+        <option value="16:9">📺 16:9 (Kino)</option>
+        <option value="9:16">📱 9:16 (Reels)</option>
+        <option value="1:1">⬜ 1:1 (Square)</option>
+      </select>
+      <select class="select-box" id="quality">
+        <option value="standard">🔵 Standard</option>
+        <option value="pro">🟣 Pro (HD)</option>
+      </select>
+    </div>
+
+    <div class="platform-info" id="platformInfo">
+      🎬 <span id="platformDesc">Kling AI — Kinematografik sifat, realistik harakatlar</span>
+    </div>
+
+    <button class="generate-btn" id="generateBtn" onclick="generateVideo()">
+      ✦ Video Yaratish
+    </button>
+
+    <!-- CREDITS -->
+    <div class="credits-bar">
+      <div class="credits-info">
+        <span class="credits-icon">💎</span>
+        <div>
+          <div class="credits-text">Mavjud kreditlar</div>
+          <div class="credits-count" id="creditsCount">10 kredit</div>
+        </div>
+      </div>
+      <button class="buy-btn">+ Kredit sotib olish</button>
+    </div>
+
+    <!-- RESULT -->
+    <div class="result-area" id="resultArea">
+      <div class="result-label">// NATIJA</div>
+      <div class="video-placeholder" id="videoBox">
+        <div class="loader" id="loader">
+          <div class="spinner"></div>
+          <div class="loader-text" id="loaderText">Video tayyorlanmoqda...</div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-value">4</div>
+      <div class="stat-label">AI Platform</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">HD</div>
+      <div class="stat-label">Video Sifati</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">30s</div>
+      <div class="stat-label">O'rtacha vaqt</div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span id="toastIcon">✦</span>
+  <span id="toastMsg">Video tayyor!</span>
+</div>
+
+<script>
+  const platforms = {
+    kling:   { desc: "Kling AI — Kinematografik sifat, realistik harakatlar", color: "#ff4fcb" },
+    runway:  { desc: "Runway ML — Ijodiy effektlar va professional natija",   color: "#6c47ff" },
+    pika:    { desc: "Pika Labs — Tez va chiroyli, animatsiyaga ideal",        color: "#22d9a0" },
+    hailuo:  { desc: "Hailuo AI — Kuchli va bepul kredit bilan",              color: "#ffd947" },
+  };
+
+  let selectedPlatform = "kling";
+  let credits = 10;
+
+  function selectPlatform(btn) {
+    document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedPlatform = btn.dataset.platform;
+    const p = platforms[selectedPlatform];
+    document.getElementById('platformDesc').textContent = p.desc;
+  }
+
+  function showToast(msg, icon = "✦") {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    document.getElementById('toastIcon').textContent = icon;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function generateVideo() {
+    const prompt = document.getElementById('promptInput').value.trim();
+    if (!prompt) { showToast("Iltimos, prompt yozing!", "⚠️"); return; }
+    if (credits <= 0) { showToast("Kredit yetarli emas!", "💎"); return; }
+
+    credits--;
+    document.getElementById('creditsCount').textContent = credits + " kredit";
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.textContent = "⏳ Yaratilmoqda...";
+
+    const resultArea = document.getElementById('resultArea');
+    const loader = document.getElementById('loader');
+    const progressFill = document.getElementById('progressFill');
+    const loaderText = document.getElementById('loaderText');
+    const videoBox = document.getElementById('videoBox');
+
+    resultArea.classList.add('show');
+    loader.classList.add('show');
+    progressFill.style.width = '0%';
+
+    const steps = [
+      { pct: 15, text: "Prompt tahlil qilinmoqda..." },
+      { pct: 35, text: selectedPlatform.toUpperCase() + " ga yuborilmoqda..." },
+      { pct: 60, text: "AI video yaratmoqda..." },
+      { pct: 85, text: "Rendering..." },
+      { pct: 100, text: "Tayyor! ✦" },
+    ];
+
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i >= steps.length) {
+        clearInterval(interval);
+
+        // Show demo result
+        loader.classList.remove('show');
+        videoBox.innerHTML = `
+          <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;">
+            <div style="font-size:48px">🎬</div>
+            <div style="font-size:16px;font-weight:600;color:#e8eaf2">Video tayyor!</div>
+            <div style="font-size:13px;color:#5a5f7a;text-align:center;max-width:300px;line-height:1.5">${prompt.substring(0,80)}...</div>
+            <div style="display:flex;gap:10px;margin-top:8px;">
+              <button onclick="showToast('API ulangandan keyin yuklab olish ishlaydi! 🚀','📥')" style="padding:10px 20px;background:linear-gradient(135deg,#6c47ff,#ff4fcb);border:none;border-radius:8px;color:white;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">
+                ⬇ Yuklab olish
+              </button>
+              <button onclick="share()" style="padding:10px 20px;background:rgba(108,71,255,0.12);border:1px solid rgba(108,71,255,0.3);border-radius:8px;color:#6c47ff;font-family:'Space Grotesk',sans-serif;font-size:14px;cursor:pointer;">
+                ↗ Ulashish
+              </button>
+            </div>
+            <div style="font-size:11px;color:#5a5f7a;font-family:'JetBrains Mono',monospace;">
+              Platform: ${selectedPlatform.toUpperCase()} · Demo rejim
+            </div>
+          </div>
+        `;
+
+        btn.disabled = false;
+        btn.textContent = "✦ Video Yaratish";
+        showToast("Video muvaffaqiyatli yaratildi! 🎬", "✅");
+        return;
+      }
+      progressFill.style.width = steps[i].pct + '%';
+      loaderText.textContent = steps[i].text;
+      i++;
+    }, 700);
+  }
+
+  function share() {
+    showToast("Havola nusxalandi! 🔗", "✅");
+  }
+</script>
+</body>
+</html>
 
