@@ -12,10 +12,26 @@
     nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:rgba(8,9,13,0.9);backdrop-filter:blur(16px);border-bottom:1px solid #1e2130;}
     .logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,#6c47ff,#ff4fcb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
     .badge{font-size:11px;background:rgba(108,71,255,0.15);border:1px solid rgba(108,71,255,0.3);color:#6c47ff;padding:4px 10px;border-radius:20px;}
-    .hero{position:relative;z-index:1;text-align:center;padding:60px 24px 40px;}
-    .hero h1{font-size:clamp(28px,6vw,52px);font-weight:700;line-height:1.1;margin-bottom:14px;}
+    .user-info{display:flex;align-items:center;gap:10px;}
+    .user-avatar{width:32px;height:32px;border-radius:50%;border:2px solid #6c47ff;}
+    .user-name{font-size:13px;color:#e8eaf2;}
+    .login-btn{display:flex;align-items:center;gap:8px;padding:8px 16px;background:white;border:none;border-radius:10px;color:#1a1a1a;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+    .login-btn img{width:18px;height:18px;}
+    .logout-btn{padding:7px 14px;background:rgba(255,79,79,0.1);border:1px solid rgba(255,79,79,0.3);border-radius:8px;color:#ff4f4f;font-size:13px;cursor:pointer;}
+
+    /* LOGIN SCREEN */
+    .login-screen{position:fixed;inset:0;background:#08090d;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:24px;}
+    .login-screen.hide{display:none;}
+    .login-logo{font-size:36px;font-weight:700;background:linear-gradient(135deg,#6c47ff,#ff4fcb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .login-desc{font-size:15px;color:#5a5f7a;text-align:center;max-width:300px;line-height:1.6;}
+    .google-btn{display:flex;align-items:center;gap:12px;padding:14px 28px;background:white;border:none;border-radius:14px;color:#1a1a1a;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.3);}
+    .google-btn img{width:24px;height:24px;}
+    .free-badge{font-size:12px;color:#22d9a0;border:1px solid rgba(34,217,160,0.3);padding:4px 12px;border-radius:20px;}
+
+    .hero{position:relative;z-index:1;text-align:center;padding:48px 24px 32px;}
+    .hero h1{font-size:clamp(26px,5vw,48px);font-weight:700;line-height:1.1;margin-bottom:12px;}
     .hero h1 span{background:linear-gradient(135deg,#6c47ff,#ff4fcb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-    .hero p{font-size:16px;color:#5a5f7a;max-width:400px;margin:0 auto;line-height:1.6;}
+    .hero p{font-size:15px;color:#5a5f7a;max-width:400px;margin:0 auto;line-height:1.6;}
     .wrap{position:relative;z-index:1;max-width:700px;margin:0 auto;padding:0 16px 80px;}
     .card{background:#111318;border:1px solid #1e2130;border-radius:20px;padding:24px;}
     textarea{width:100%;background:#08090d;border:1px solid #1e2130;border-radius:12px;padding:14px;color:#e8eaf2;font-family:'Space Grotesk',sans-serif;font-size:15px;line-height:1.6;resize:none;min-height:120px;outline:none;transition:border-color 0.2s;}
@@ -49,22 +65,43 @@
   </style>
 </head>
 <body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-logo">VideoAI.uz</div>
+  <p class="login-desc">AI yordamida professional videolar yarating. Boshlash uchun kiring.</p>
+  <span class="free-badge">✦ 3 ta bepul kredit</span>
+  <button class="google-btn" onclick="loginWithGoogle()">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"/>
+    Google bilan kirish
+  </button>
+</div>
+
 <nav>
   <div class="logo">VideoAI.uz</div>
-  <div class="badge">BETA v1.0</div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="user-info" id="userInfo" style="display:none">
+      <img class="user-avatar" id="userAvatar" src=""/>
+      <span class="user-name" id="userName"></span>
+      <button class="logout-btn" onclick="logout()">Chiqish</button>
+    </div>
+    <div class="badge">BETA v2.0</div>
+  </div>
 </nav>
+
 <div class="hero">
   <h1>Matn yozing,<br/><span>Video oling</span></h1>
   <p>AI yordamida professional videolar yarating</p>
 </div>
+
 <div class="wrap">
   <div class="card">
     <textarea id="prompt" placeholder="Videoni ingliz tilida yozing... Masalan: A cat sneaks up behind a person and hits them on the head with a stick, funny cartoon style"></textarea>
     <button class="btn" id="btn" onclick="go()">✦ Video Yaratish</button>
     <div class="err" id="err"></div>
     <div class="credits">
-      <div><div class="c-label">Mavjud kreditlar</div><div class="c-count" id="cc">10 kredit</div></div>
-      <button class="buy">+ Kredit sotib olish</button>
+      <div><div class="c-label">Mavjud kreditlar</div><div class="c-count" id="cc">3 kredit</div></div>
+      <button class="buy" onclick="buyCredits()">+ Kredit sotib olish</button>
     </div>
     <div class="result" id="result">
       <div class="rlabel">// NATIJA</div>
@@ -77,70 +114,163 @@
       </div>
       <div class="drow" id="drow" style="display:none">
         <a class="dlbtn" id="dl" href="#" download="video.mp4">⬇ Yuklab olish</a>
-        <button class="shbtn" onclick="share()">↗ Ulashish</button>
+        <button class="shbtn" onclick="shareVideo()">↗ Ulashish</button>
       </div>
     </div>
   </div>
 </div>
+
 <div class="toast" id="toast"><span id="ti">✦</span><span id="tm">Tayyor!</span></div>
-<script>
-let credits=10,videoUrl=null,poll=null;
-function toast(m,i='✦'){const t=document.getElementById('toast');document.getElementById('tm').textContent=m;document.getElementById('ti').textContent=i;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
-function err(m){const e=document.getElementById('err');e.textContent='⚠️ '+m;e.classList.add('show');}
-function setP(p,t){document.getElementById('pf').style.width=p+'%';document.getElementById('lt').textContent=t;}
-function resetBtn(){const b=document.getElementById('btn');b.disabled=false;b.textContent='✦ Video Yaratish';}
 
-async function go(){
-  const prompt=document.getElementById('prompt').value.trim();
-  if(!prompt){toast('Prompt yozing!','⚠️');return;}
-  if(credits<=0){toast('Kredit yetarli emas!','💎');return;}
-  document.getElementById('err').classList.remove('show');
-  credits--;
-  document.getElementById('cc').textContent=credits+' kredit';
-  const btn=document.getElementById('btn');
-  btn.disabled=true;btn.textContent='⏳ Yaratilmoqda...';
-  document.getElementById('result').classList.add('show');
-  document.getElementById('drow').style.display='none';
-  document.getElementById('vbox').innerHTML='<div class="loader"><div class="spin"></div><div class="ltext" id="lt">So\'rov yuborilmoqda...</div><div class="pbar"><div class="pfill" id="pf"></div></div></div>';
-  setP(10,'So\'rov yuborilmoqda...');
-  try{
-    const r=await fetch('/.netlify/functions/generate-video',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
-    const d=await r.json();
-    if(!r.ok||d.error)throw new Error(d.error||'Server xatosi');
-    setP(30,'Video yaratilmoqda...');
-    startPoll(d.id);
-  }catch(e){err(e.message);resetBtn();credits++;document.getElementById('cc').textContent=credits+' kredit';}
-}
+<!-- FIREBASE -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
 
-function startPoll(id){
-  let n=0;
-  const msgs=['AI tahlil qilmoqda...','Kadrlar yaratilmoqda...','Video montaj...','Deyarli tayyor...'];
-  poll=setInterval(async()=>{
-    n++;
-    setP(Math.min(30+n*1.5,90),msgs[Math.floor(n/15)%4]);
-    try{
-      const r=await fetch('/.netlify/functions/check-status?id='+id);
-      const d=await r.json();
-      if(d.status==='succeeded'&&d.output){
-        clearInterval(poll);setP(100,'Tayyor! 🎉');
-        const url=Array.isArray(d.output)?d.output[0]:d.output;
-        showVideo(url);
-      }else if(d.status==='failed'){clearInterval(poll);err('Xato yuz berdi');resetBtn();}
-      else if(n>=80){clearInterval(poll);err('Vaqt tugadi');resetBtn();}
-    }catch(e){clearInterval(poll);err(e.message);resetBtn();}
-  },3000);
-}
+  // ⬇️ O'ZINGIZNING CONFIG NI SHU YERGA QO'YING
+  const firebaseConfig = {
+    apiKey: "// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyARIT2j262klZexM3-I_s7GaHqOSG7Y-dM",
+  authDomain: "videoai-uz-2fd5d.firebaseapp.com",
+  projectId: "videoai-uz-2fd5d",
+  storageBucket: "videoai-uz-2fd5d.firebasestorage.app",
+  messagingSenderId: "306650035285",
+  appId: "1:306650035285:web:5eeed5232df7f3938450dc",
+  measurementId: "G-HL51RYVN7V"
+};",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
 
-function showVideo(url){
-  videoUrl=url;
-  document.getElementById('vbox').innerHTML='<video src="'+url+'" controls autoplay loop style="width:100%;height:100%;border-radius:14px;object-fit:cover"></video>';
-  document.getElementById('drow').style.display='flex';
-  document.getElementById('dl').href=url;
-  toast('Video tayyor! 🎬','✅');
-  resetBtn();
-}
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
 
-function share(){if(videoUrl){navigator.clipboard.writeText(videoUrl);toast('Havola nusxalandi!','🔗');}}
+  let currentUser = null;
+  let credits = 0;
+
+  // Auth holati
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      currentUser = user;
+      document.getElementById('loginScreen').classList.add('hide');
+      document.getElementById('userInfo').style.display = 'flex';
+      document.getElementById('userAvatar').src = user.photoURL;
+      document.getElementById('userName').textContent = user.displayName.split(' ')[0];
+
+      // Foydalanuvchi ma'lumotlari
+      const userRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        await setDoc(userRef, { credits: 3, email: user.email, name: user.displayName, created: new Date() });
+        credits = 3;
+      } else {
+        credits = userSnap.data().credits || 0;
+      }
+      document.getElementById('cc').textContent = credits + ' kredit';
+    } else {
+      currentUser = null;
+      document.getElementById('loginScreen').classList.remove('hide');
+      document.getElementById('userInfo').style.display = 'none';
+    }
+  });
+
+  window.loginWithGoogle = async () => {
+    try { await signInWithPopup(auth, provider); }
+    catch(e) { toast('Xato: ' + e.message, '❌'); }
+  };
+
+  window.logout = async () => {
+    await signOut(auth);
+    toast('Chiqildi!', '👋');
+  };
+
+  window.go = async () => {
+    if (!currentUser) { toast('Avval kiring!', '⚠️'); return; }
+    const prompt = document.getElementById('prompt').value.trim();
+    if (!prompt) { toast('Prompt yozing!', '⚠️'); return; }
+    if (credits <= 0) { toast('Kredit yetarli emas!', '💎'); return; }
+
+    document.getElementById('err').classList.remove('show');
+    const btn = document.getElementById('btn');
+    btn.disabled = true; btn.textContent = '⏳ Yaratilmoqda...';
+    document.getElementById('result').classList.add('show');
+    document.getElementById('drow').style.display = 'none';
+    document.getElementById('vbox').innerHTML = '<div class="loader"><div class="spin"></div><div class="ltext" id="lt">So\'rov yuborilmoqda...</div><div class="pbar"><div class="pfill" id="pf"></div></div></div>';
+    setP(10, 'So\'rov yuborilmoqda...');
+
+    try {
+      const r = await fetch('/.netlify/functions/generate-video', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({prompt})
+      });
+      const d = await r.json();
+      if (!r.ok || d.error) throw new Error(d.error || 'Server xatosi');
+
+      // Kredit ayirish
+      credits--;
+      document.getElementById('cc').textContent = credits + ' kredit';
+      await updateDoc(doc(db, 'users', currentUser.uid), { credits: increment(-1) });
+
+      setP(30, 'Video yaratilmoqda...');
+      startPoll(d.id);
+    } catch(e) {
+      showErr(e.message);
+      btn.disabled = false;
+      btn.textContent = '✦ Video Yaratish';
+    }
+  };
+
+  window.buyCredits = () => {
+    toast('Tez kunda: Payme/Click orqali kredit sotib olish!', '💳');
+  };
+
+  function startPoll(id) {
+    let n = 0;
+    const msgs = ['AI tahlil qilmoqda...', 'Kadrlar yaratilmoqda...', 'Video montaj...', 'Deyarli tayyor...'];
+    const poll = setInterval(async () => {
+      n++;
+      setP(Math.min(30 + n * 1.5, 90), msgs[Math.floor(n/15) % 4]);
+      try {
+        const r = await fetch('/.netlify/functions/check-status?id=' + id);
+        const d = await r.json();
+        if (d.status === 'succeeded' && d.output) {
+          clearInterval(poll); setP(100, 'Tayyor! 🎉');
+          const url = Array.isArray(d.output) ? d.output[0] : d.output;
+          showVideo(url);
+        } else if (d.status === 'failed') {
+          clearInterval(poll); showErr('Xato yuz berdi'); resetBtn();
+        } else if (n >= 80) {
+          clearInterval(poll); showErr('Vaqt tugadi'); resetBtn();
+        }
+      } catch(e) { clearInterval(poll); showErr(e.message); resetBtn(); }
+    }, 3000);
+  }
+
+  function showVideo(url) {
+    document.getElementById('vbox').innerHTML = '<video src="' + url + '" controls autoplay loop style="width:100%;height:100%;border-radius:14px;object-fit:cover"></video>';
+    document.getElementById('drow').style.display = 'flex';
+    document.getElementById('dl').href = url;
+    toast('Video tayyor! 🎬', '✅');
+    resetBtn();
+  }
+
+  window.shareVideo = () => {
+    const url = document.getElementById('dl').href;
+    if (url && url !== '#') { navigator.clipboard.writeText(url); toast('Havola nusxalandi!', '🔗'); }
+  };
+
+  function setP(p, t) { document.getElementById('pf').style.width = p + '%'; document.getElementById('lt').textContent = t; }
+  function showErr(m) { const e = document.getElementById('err'); e.textContent = '⚠️ ' + m; e.classList.add('show'); }
+  function resetBtn() { const b = document.getElementById('btn'); b.disabled = false; b.textContent = '✦ Video Yaratish'; }
+  function toast(m, i='✦') { const t = document.getElementById('toast'); document.getElementById('tm').textContent = m; document.getElementById('ti').textContent = i; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
 </script>
 </body>
 </html>
