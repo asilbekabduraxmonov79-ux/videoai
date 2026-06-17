@@ -7,95 +7,137 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
-    body{background:#08090d;color:#e8eaf2;font-family:'Space Grotesk',sans-serif;min-height:100vh;}
-    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(108,71,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(108,71,255,0.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;}
-    nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:rgba(8,9,13,0.9);backdrop-filter:blur(16px);border-bottom:1px solid #1e2130;}
-    .logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,#6c47ff,#ff4fcb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-    .badge{font-size:11px;background:rgba(108,71,255,0.15);border:1px solid rgba(108,71,255,0.3);color:#6c47ff;padding:4px 10px;border-radius:20px;}
-    .user-avatar{width:32px;height:32px;border-radius:50%;border:2px solid #6c47ff;}
-    .user-name{font-size:13px;color:#e8eaf2;}
-    .logout-btn{padding:7px 14px;background:rgba(255,79,79,0.1);border:1px solid rgba(255,79,79,0.3);border-radius:8px;color:#ff4f4f;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
-    .login-screen{position:fixed;inset:0;background:#08090d;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:24px;}
+    body{background:#08090d;color:#e8eaf2;font-family:'Space Grotesk',sans-serif;min-height:100vh;overflow-x:hidden;}
+
+    /* LOGIN SCREEN */
+    .login-screen{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;overflow:hidden;}
     .login-screen.hide{display:none;}
-    .login-logo{font-size:36px;font-weight:700;background:linear-gradient(135deg,#6c47ff,#ff4fcb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-    .login-desc{font-size:15px;color:#5a5f7a;text-align:center;max-width:300px;line-height:1.6;}
-    .google-btn{display:flex;align-items:center;gap:12px;padding:14px 28px;background:white;border:none;border-radius:14px;color:#1a1a1a;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.3);}
+    .login-bg{position:absolute;inset:0;background:#08090d;}
+    .login-bg video{width:100%;height:100%;object-fit:cover;opacity:0.25;}
+    .login-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,9,13,0.3),rgba(8,9,13,0.8));}
+    .login-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center;}
+    .login-logo{font-size:42px;font-weight:700;background:linear-gradient(135deg,#6c47ff,#ff4fcb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-1px;}
+    .login-desc{font-size:15px;color:rgba(232,234,242,0.7);max-width:300px;line-height:1.6;}
+    .free-badge{font-size:12px;color:#22d9a0;border:1px solid rgba(34,217,160,0.4);background:rgba(34,217,160,0.08);padding:6px 16px;border-radius:20px;}
+    .google-btn{display:flex;align-items:center;gap:12px;padding:14px 32px;background:white;border:none;border-radius:14px;color:#1a1a1a;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;cursor:pointer;box-shadow:0 8px 32px rgba(0,0,0,0.4);transition:transform 0.2s;}
+    .google-btn:hover{transform:translateY(-2px);}
     .google-btn img{width:24px;height:24px;}
-    .free-badge{font-size:12px;color:#22d9a0;border:1px solid rgba(34,217,160,0.3);padding:4px 12px;border-radius:20px;}
-    .hero{position:relative;z-index:1;text-align:center;padding:48px 24px 32px;}
-    .hero h1{font-size:clamp(26px,5vw,48px);font-weight:700;line-height:1.1;margin-bottom:12px;}
-    .hero h1 span{background:linear-gradient(135deg,#6c47ff,#ff4fcb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-    .hero p{font-size:15px;color:#5a5f7a;max-width:400px;margin:0 auto;line-height:1.6;}
+    .login-note{font-size:12px;color:rgba(232,234,242,0.4);}
+
+    /* NAV */
+    nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:rgba(8,9,13,0.9);backdrop-filter:blur(16px);border-bottom:1px solid #1e2130;}
+    .logo{font-size:18px;font-weight:700;background:linear-gradient(135deg,#6c47ff,#ff4fcb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .nav-right{display:flex;align-items:center;gap:10px;}
+    .badge{font-size:11px;background:rgba(108,71,255,0.15);border:1px solid rgba(108,71,255,0.3);color:#6c47ff;padding:4px 10px;border-radius:20px;}
+    .credit-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(34,217,160,0.1);border:1px solid rgba(34,217,160,0.3);border-radius:10px;color:#22d9a0;font-size:13px;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
+    .user-avatar{width:30px;height:30px;border-radius:50%;border:2px solid #6c47ff;cursor:pointer;}
+    .logout-btn{padding:6px 12px;background:rgba(255,79,79,0.1);border:1px solid rgba(255,79,79,0.3);border-radius:8px;color:#ff4f4f;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
+
+    /* PLATFORMS */
+    .platforms-bar{position:relative;z-index:1;display:flex;gap:8px;overflow-x:auto;padding:16px 20px;scrollbar-width:none;}
+    .platforms-bar::-webkit-scrollbar{display:none;}
+    .platform-chip{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:30px;border:1px solid #1e2130;background:#111318;color:#5a5f7a;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:all 0.2s;flex-shrink:0;}
+    .platform-chip.active{border-color:#6c47ff;background:rgba(108,71,255,0.12);color:#e8eaf2;}
+    .platform-chip .dot{width:7px;height:7px;border-radius:50%;}
+
+    /* MAIN */
     .wrap{position:relative;z-index:1;max-width:700px;margin:0 auto;padding:0 16px 80px;}
-    .card{background:#111318;border:1px solid #1e2130;border-radius:20px;padding:24px;}
-    textarea{width:100%;background:#08090d;border:1px solid #1e2130;border-radius:12px;padding:14px;color:#e8eaf2;font-family:'Space Grotesk',sans-serif;font-size:15px;line-height:1.6;resize:none;min-height:120px;outline:none;transition:border-color 0.2s;}
+    .card{background:#111318;border:1px solid #1e2130;border-radius:20px;padding:20px;}
+    textarea{width:100%;background:#08090d;border:1px solid #1e2130;border-radius:12px;padding:14px;color:#e8eaf2;font-family:'Space Grotesk',sans-serif;font-size:15px;line-height:1.6;resize:none;min-height:110px;outline:none;transition:border-color 0.2s;}
     textarea:focus{border-color:#6c47ff;}
     textarea::placeholder{color:#5a5f7a;}
-    .btn{width:100%;margin-top:16px;padding:15px;background:linear-gradient(135deg,#6c47ff,#ff4fcb);border:none;border-radius:12px;color:white;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+    .btn{width:100%;margin-top:14px;padding:15px;background:linear-gradient(135deg,#6c47ff,#ff4fcb);border:none;border-radius:12px;color:white;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;}
     .btn:hover{transform:translateY(-1px);box-shadow:0 8px 32px rgba(108,71,255,0.4);}
     .btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
-    .err{background:rgba(255,79,79,0.08);border:1px solid rgba(255,79,79,0.3);border-radius:10px;padding:14px;color:#ff4f4f;font-size:14px;margin-top:12px;display:none;}
+    .err{background:rgba(255,79,79,0.08);border:1px solid rgba(255,79,79,0.3);border-radius:10px;padding:12px;color:#ff4f4f;font-size:13px;margin-top:10px;display:none;}
     .err.show{display:block;}
-    .credits{display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding:12px 16px;background:#08090d;border:1px solid #1e2130;border-radius:12px;}
-    .c-count{font-size:15px;font-weight:600;color:#22d9a0;font-family:monospace;}
-    .c-label{font-size:12px;color:#5a5f7a;}
-    .buy{padding:7px 14px;background:rgba(108,71,255,0.12);border:1px solid rgba(108,71,255,0.3);border-radius:8px;color:#6c47ff;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
-    .result{margin-top:20px;display:none;}
+    .result{margin-top:18px;display:none;}
     .result.show{display:block;}
-    .rlabel{font-size:11px;color:#5a5f7a;font-family:monospace;margin-bottom:10px;letter-spacing:1px;}
+    .rlabel{font-size:11px;color:#5a5f7a;font-family:monospace;margin-bottom:8px;letter-spacing:1px;}
     .vbox{background:#08090d;border:1px solid #1e2130;border-radius:14px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;overflow:hidden;}
     .vbox video{width:100%;height:100%;object-fit:cover;border-radius:14px;}
-    .loader{display:flex;flex-direction:column;align-items:center;gap:14px;}
+    .loader{display:flex;flex-direction:column;align-items:center;gap:12px;}
     .spin{width:44px;height:44px;border:3px solid #1e2130;border-top-color:#6c47ff;border-radius:50%;animation:spin 0.8s linear infinite;}
     @keyframes spin{to{transform:rotate(360deg);}}
     .ltext{font-size:13px;color:#5a5f7a;font-family:monospace;}
     .pbar{width:180px;height:3px;background:#1e2130;border-radius:2px;overflow:hidden;}
     .pfill{height:100%;background:linear-gradient(90deg,#6c47ff,#ff4fcb);width:0%;transition:width 0.5s;}
-    .drow{display:flex;gap:10px;margin-top:14px;}
+    .drow{display:flex;gap:10px;margin-top:12px;}
     .dlbtn{flex:1;padding:12px;background:linear-gradient(135deg,#6c47ff,#ff4fcb);border:none;border-radius:10px;color:white;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;text-align:center;display:block;}
     .shbtn{flex:1;padding:12px;background:rgba(108,71,255,0.12);border:1px solid rgba(108,71,255,0.3);border-radius:10px;color:#6c47ff;font-size:14px;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
+
+    /* PAYMENT MODAL */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;display:none;align-items:flex-end;justify-content:center;}
+    .modal-overlay.show{display:flex;}
+    .modal{background:#111318;border:1px solid #1e2130;border-radius:24px 24px 0 0;padding:28px 24px;width:100%;max-width:500px;}
+    .modal-title{font-size:18px;font-weight:700;margin-bottom:6px;}
+    .modal-sub{font-size:13px;color:#5a5f7a;margin-bottom:20px;}
+    .price-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;}
+    .price-card{background:#08090d;border:1px solid #1e2130;border-radius:14px;padding:14px;text-align:center;cursor:pointer;transition:all 0.2s;}
+    .price-card.popular{border-color:#6c47ff;background:rgba(108,71,255,0.08);}
+    .price-card:hover{border-color:#6c47ff;}
+    .price-card .credits{font-size:20px;font-weight:700;color:#e8eaf2;}
+    .price-card .price{font-size:13px;color:#5a5f7a;margin-top:4px;}
+    .price-card .popular-badge{font-size:10px;color:#6c47ff;background:rgba(108,71,255,0.15);padding:2px 8px;border-radius:10px;margin-bottom:6px;display:inline-block;}
+    .pay-methods{display:flex;flex-direction:column;gap:10px;}
+    .pay-btn{display:flex;align-items:center;gap:12px;padding:14px 18px;background:#08090d;border:1px solid #1e2130;border-radius:12px;cursor:pointer;transition:all 0.2s;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:500;color:#e8eaf2;}
+    .pay-btn:hover{border-color:#6c47ff;}
+    .pay-btn img{width:32px;height:32px;border-radius:8px;object-fit:contain;}
+    .modal-close{width:100%;margin-top:16px;padding:12px;background:transparent;border:1px solid #1e2130;border-radius:12px;color:#5a5f7a;font-family:'Space Grotesk',sans-serif;font-size:14px;cursor:pointer;}
+
     .toast{position:fixed;bottom:20px;right:20px;background:#111318;border:1px solid #6c47ff;border-radius:12px;padding:12px 18px;font-size:13px;z-index:999;transform:translateY(60px);opacity:0;transition:all 0.3s;display:flex;align-items:center;gap:8px;}
     .toast.show{transform:translateY(0);opacity:1;}
   </style>
 </head>
 <body>
 
+<!-- LOGIN SCREEN -->
 <div class="login-screen" id="loginScreen">
-  <div class="login-logo">VideoAI.uz</div>
-  <p class="login-desc">AI yordamida professional videolar yarating. Boshlash uchun kiring.</p>
-  <span class="free-badge">✦ 3 ta bepul kredit</span>
-  <button class="google-btn" onclick="loginWithGoogle()">
-    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"/>
-    Google bilan kirish
-  </button>
+  <div class="login-bg">
+    <video autoplay muted loop playsinline>
+      <source src="https://cdn.pixabay.com/video/2024/03/07/203645-921039088_large.mp4" type="video/mp4"/>
+    </video>
+  </div>
+  <div class="login-overlay"></div>
+  <div class="login-content">
+    <div class="login-logo">VideoAI.uz</div>
+    <p class="login-desc">Eng yaxshi AI video generatorlari bitta platformada</p>
+    <span class="free-badge">✦ 3 ta bepul kredit</span>
+    <button class="google-btn" onclick="loginWithGoogle()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"/>
+      Google bilan kirish
+    </button>
+    <p class="login-note">Kirish orqali siz shartlarimizga rozilik bildirasiz</p>
+  </div>
 </div>
 
+<!-- NAV -->
 <nav>
   <div class="logo">VideoAI.uz</div>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <div id="userInfo" style="display:none;align-items:center;gap:8px;display:none;">
-      <img class="user-avatar" id="userAvatar" src=""/>
-      <span class="user-name" id="userName"></span>
-      <button class="logout-btn" onclick="logout()">Chiqish</button>
-    </div>
-    <div class="badge">BETA v2.0</div>
+  <div class="nav-right">
+    <button class="credit-btn" id="creditBtn" onclick="openPayment()">
+      💎 <span id="cc">3</span> kredit
+    </button>
+    <img class="user-avatar" id="userAvatar" src="" onclick="logout()" title="Chiqish uchun bosing"/>
+    <div class="badge">v2.0</div>
   </div>
 </nav>
 
-<div class="hero">
-  <h1>Matn yozing,<br/><span>Video oling</span></h1>
-  <p>AI yordamida professional videolar yarating</p>
+<!-- PLATFORMS -->
+<div class="platforms-bar">
+  <div class="platform-chip active" onclick="selectP(this,'minimax')"><span class="dot" style="background:#ff4fcb"></span>Kling AI</div>
+  <div class="platform-chip" onclick="selectP(this,'runway')"><span class="dot" style="background:#6c47ff"></span>Runway ML</div>
+  <div class="platform-chip" onclick="selectP(this,'pika')"><span class="dot" style="background:#22d9a0"></span>Pika Labs</div>
+  <div class="platform-chip" onclick="selectP(this,'hailuo')"><span class="dot" style="background:#ffd947"></span>Hailuo AI</div>
+  <div class="platform-chip" onclick="selectP(this,'seedance')"><span class="dot" style="background:#ff6b35"></span>Seedance</div>
 </div>
 
+<!-- MAIN -->
 <div class="wrap">
   <div class="card">
     <textarea id="prompt" placeholder="Ingliz tilida yozing... Masalan: A cat sneaks up behind a person and hits them on the head with a stick, funny cartoon style"></textarea>
     <button class="btn" id="btn" onclick="go()">✦ Video Yaratish</button>
     <div class="err" id="err"></div>
-    <div class="credits">
-      <div><div class="c-label">Mavjud kreditlar</div><div class="c-count" id="cc">3 kredit</div></div>
-      <button class="buy" onclick="buyCredits()">+ Kredit sotib olish</button>
-    </div>
     <div class="result" id="result">
       <div class="rlabel">// NATIJA</div>
       <div class="vbox" id="vbox">
@@ -110,6 +152,40 @@
         <button class="shbtn" onclick="shareVideo()">↗ Ulashish</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="payModal">
+  <div class="modal">
+    <div class="modal-title">💎 Kredit sotib olish</div>
+    <div class="modal-sub">To'lov usulini tanlang</div>
+    <div class="price-cards">
+      <div class="price-card" onclick="selectPlan(10,15000)">
+        <div class="credits">10</div>
+        <div class="price">15,000 so'm</div>
+      </div>
+      <div class="price-card popular" onclick="selectPlan(25,30000)">
+        <div class="popular-badge">🔥 Mashhur</div>
+        <div class="credits">25</div>
+        <div class="price">30,000 so'm</div>
+      </div>
+      <div class="price-card" onclick="selectPlan(60,60000)">
+        <div class="credits">60</div>
+        <div class="price">60,000 so'm</div>
+      </div>
+    </div>
+    <div class="pay-methods">
+      <button class="pay-btn" onclick="payWithPayme()">
+        <img src="https://play-lh.googleusercontent.com/y0PyKNBXJe9R4S3o6ZOXdJf5wDZgdqLXkNF53JuQxKS60TnAqK3YaBpq7i8wIoHydg=w240-h480-rw" onerror="this.style.display='none'"/>
+        Payme orqali to'lash
+      </button>
+      <button class="pay-btn" onclick="payWithGooglePlay()">
+        <img src="https://play-lh.googleusercontent.com/q0GEMqHpqmSVEtgGKBEQNT7XDoYTPMimJLvMvJ9GrPF8_dTqJEqYvBfaaCfI-pWDFg=w240-h480-rw" onerror="this.style.display='none'"/>
+        Google Play orqali to'lash
+      </button>
+    </div>
+    <button class="modal-close" onclick="closePayment()">Yopish</button>
   </div>
 </div>
 
@@ -128,7 +204,7 @@ const firebaseConfig = {
   messagingSenderId: "306650035285",
   appId: "1:306650035285:web:5eeed5232df7f3938450dc",
   measurementId: "G-HL51RYVN7V"
-};",
+};
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -136,28 +212,27 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 let currentUser = null;
 let credits = 0;
+let selectedPlatform = 'minimax';
+let selectedPlan = { credits: 25, price: 30000 };
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
     document.getElementById('loginScreen').classList.add('hide');
-    const ui = document.getElementById('userInfo');
-    ui.style.display = 'flex';
     document.getElementById('userAvatar').src = user.photoURL;
-    document.getElementById('userName').textContent = user.displayName.split(' ')[0];
     const userRef = doc(db, 'users', user.uid);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) {
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) {
       await setDoc(userRef, { credits: 3, email: user.email, name: user.displayName, created: new Date() });
       credits = 3;
     } else {
-      credits = userSnap.data().credits || 0;
+      credits = snap.data().credits || 0;
     }
-    document.getElementById('cc').textContent = credits + ' kredit';
+    document.getElementById('cc').textContent = credits;
   } else {
     currentUser = null;
     document.getElementById('loginScreen').classList.remove('hide');
-    document.getElementById('userInfo').style.display = 'none';
+    document.getElementById('userAvatar').src = '';
   }
 });
 
@@ -167,15 +242,41 @@ window.loginWithGoogle = async () => {
 };
 
 window.logout = async () => {
-  await signOut(auth);
-  showToast('Chiqildi!', '👋');
+  if(confirm('Chiqmoqchimisiz?')) { await signOut(auth); showToast('Chiqildi!', '👋'); }
+};
+
+window.selectP = (el, platform) => {
+  document.querySelectorAll('.platform-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  selectedPlatform = platform;
+};
+
+window.openPayment = () => document.getElementById('payModal').classList.add('show');
+window.closePayment = () => document.getElementById('payModal').classList.remove('show');
+
+window.selectPlan = (c, p) => {
+  selectedPlan = { credits: c, price: p };
+  document.querySelectorAll('.price-card').forEach(el => el.style.borderColor = '');
+  showToast(c + ' kredit tanlandi!', '💎');
+};
+
+window.payWithPayme = () => {
+  const amount = selectedPlan.price * 100;
+  const merchant = 'YOUR_PAYME_MERCHANT_ID';
+  const url = `https://checkout.paycom.uz/${btoa(`m=${merchant};ac.credits=${selectedPlan.credits};a=${amount}`)}`;
+  showToast('Payme orqali to\'lov oynasi ochilmoqda...', '💳');
+  window.open(url, '_blank');
+};
+
+window.payWithGooglePlay = () => {
+  showToast('Google Play to\'lov tizimi tez kunda!', '🔄');
 };
 
 window.go = async () => {
   if (!currentUser) { showToast('Avval kiring!', '⚠️'); return; }
   const prompt = document.getElementById('prompt').value.trim();
   if (!prompt) { showToast('Prompt yozing!', '⚠️'); return; }
-  if (credits <= 0) { showToast('Kredit yetarli emas! Kredit sotib oling.', '💎'); return; }
+  if (credits <= 0) { showToast('Kredit yetarli emas!', '💎'); openPayment(); return; }
   document.getElementById('err').classList.remove('show');
   const btn = document.getElementById('btn');
   btn.disabled = true; btn.textContent = '⏳ Yaratilmoqda...';
@@ -185,41 +286,37 @@ window.go = async () => {
   setP(10, 'So\'rov yuborilmoqda...');
   try {
     const r = await fetch('/.netlify/functions/generate-video', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({prompt})
     });
     const d = await r.json();
     if (!r.ok || d.error) throw new Error(d.error || 'Server xatosi');
     credits--;
-    document.getElementById('cc').textContent = credits + ' kredit';
+    document.getElementById('cc').textContent = credits;
     await updateDoc(doc(db, 'users', currentUser.uid), { credits: increment(-1) });
     setP(30, 'Video yaratilmoqda...');
     startPoll(d.id);
   } catch(e) {
     showErr(e.message);
-    btn.disabled = false;
-    btn.textContent = '✦ Video Yaratish';
+    btn.disabled = false; btn.textContent = '✦ Video Yaratish';
   }
 };
 
-window.buyCredits = () => showToast('Tez kunda: Payme/Click orqali!', '💳');
-
 function startPoll(id) {
   let n = 0;
-  const msgs = ['AI tahlil...', 'Kadrlar...', 'Montaj...', 'Deyarli tayyor...'];
+  const msgs = ['AI tahlil...', 'Kadrlar yaratilmoqda...', 'Video montaj...', 'Deyarli tayyor...'];
   const poll = setInterval(async () => {
     n++;
-    setP(Math.min(30 + n * 1.5, 90), msgs[Math.floor(n/15) % 4]);
+    setP(Math.min(30 + n*1.5, 90), msgs[Math.floor(n/15)%4]);
     try {
-      const r = await fetch('/.netlify/functions/check-status?id=' + id);
+      const r = await fetch('/.netlify/functions/check-status?id='+id);
       const d = await r.json();
-      if (d.status === 'succeeded' && d.output) {
+      if (d.status==='succeeded' && d.output) {
         clearInterval(poll); setP(100, 'Tayyor! 🎉');
-        showVideo(Array.isArray(d.output) ? d.output[0] : d.output);
-      } else if (d.status === 'failed') {
-        clearInterval(poll); showErr('Xato'); resetBtn();
-      } else if (n >= 80) {
+        showVideo(Array.isArray(d.output)?d.output[0]:d.output);
+      } else if (d.status==='failed') {
+        clearInterval(poll); showErr('Xato yuz berdi'); resetBtn();
+      } else if (n>=80) {
         clearInterval(poll); showErr('Vaqt tugadi'); resetBtn();
       }
     } catch(e) { clearInterval(poll); showErr(e.message); resetBtn(); }
@@ -227,7 +324,7 @@ function startPoll(id) {
 }
 
 function showVideo(url) {
-  document.getElementById('vbox').innerHTML = '<video src="' + url + '" controls autoplay loop style="width:100%;height:100%;border-radius:14px;object-fit:cover"></video>';
+  document.getElementById('vbox').innerHTML = '<video src="'+url+'" controls autoplay loop style="width:100%;height:100%;border-radius:14px;object-fit:cover"></video>';
   document.getElementById('drow').style.display = 'flex';
   document.getElementById('dl').href = url;
   showToast('Video tayyor! 🎬', '✅');
@@ -236,18 +333,13 @@ function showVideo(url) {
 
 window.shareVideo = () => {
   const url = document.getElementById('dl').href;
-  if (url && url !== '#') { navigator.clipboard.writeText(url); showToast('Havola nusxalandi!', '🔗'); }
+  if(url && url!=='#'){navigator.clipboard.writeText(url); showToast('Havola nusxalandi!','🔗');}
 };
 
-function setP(p, t) { 
-  const pf = document.getElementById('pf');
-  const lt = document.getElementById('lt');
-  if(pf) pf.style.width = p + '%'; 
-  if(lt) lt.textContent = t; 
-}
-function showErr(m) { const e = document.getElementById('err'); e.textContent = '⚠️ ' + m; e.classList.add('show'); }
-function resetBtn() { const b = document.getElementById('btn'); b.disabled = false; b.textContent = '✦ Video Yaratish'; }
-function showToast(m, i='✦') { const t = document.getElementById('toast'); document.getElementById('tm').textContent = m; document.getElementById('ti').textContent = i; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+function setP(p,t){const pf=document.getElementById('pf');const lt=document.getElementById('lt');if(pf)pf.style.width=p+'%';if(lt)lt.textContent=t;}
+function showErr(m){const e=document.getElementById('err');e.textContent='⚠️ '+m;e.classList.add('show');}
+function resetBtn(){const b=document.getElementById('btn');b.disabled=false;b.textContent='✦ Video Yaratish';}
+function showToast(m,i='✦'){const t=document.getElementById('toast');document.getElementById('tm').textContent=m;document.getElementById('ti').textContent=i;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 </script>
 </body>
 </html>
