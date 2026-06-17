@@ -193,7 +193,7 @@
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -214,9 +214,6 @@ let currentUser = null;
 let credits = 0;
 let selectedPlatform = 'minimax';
 let selectedPlan = { credits: 25, price: 30000 };
-
-// Redirect dan qaytganda natijani tekshirish
-getRedirectResult(auth).catch(e => console.log('Redirect:', e.message));
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -240,7 +237,7 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 window.loginWithGoogle = async () => {
-  try { await signInWithRedirect(auth, provider); }
+  try { await signInWithPopup(auth, provider); }
   catch(e) { showToast('Xato: ' + e.message, '❌'); }
 };
 
