@@ -195,6 +195,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from ...
 
 const firebaseConfig = {
   apiKey: "AIzaSyARIT2j262klZexM3-I_s7GaHqOSG7Y-dM",
@@ -237,7 +238,7 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 window.loginWithGoogle = async () => {
-  try { await signInWithPopup(auth, provider); }
+  try { await signInWithRedirect(auth, provider); }
   catch(e) { showToast('Xato: ' + e.message, '❌'); }
 };
 
