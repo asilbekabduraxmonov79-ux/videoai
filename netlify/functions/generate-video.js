@@ -1,28 +1,18 @@
-exports.handler = async function (event, context) {
+export async function onRequestPost(context) {
   const headers = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
     "Content-Type": "application/json",
   };
 
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers, body: "" };
-  }
-
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, headers, body: JSON.stringify({ error: "Method not allowed" }) };
-  }
-
   try {
-    const { prompt, platform } = JSON.parse(event.body);
+    const { prompt, platform } = await context.request.json();
 
     if (!prompt) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: "Prompt kerak!" }) };
+      return new Response(JSON.stringify({ error: "Prompt kerak!" }), { status: 400, headers });
     }
 
-    const token = process.env.REPLICATE_API_TOKEN;
+    const token = context.env.REPLICATE_API_TOKEN;
 
-    // Har bir platform uchun model va input
     const models = {
       minimax: {
         url: "https://api.replicate.com/v1/models/minimax/video-01/predictions",
@@ -60,15 +50,20 @@ exports.handler = async function (event, context) {
     const prediction = await response.json();
 
     if (!response.ok) {
-      return { statusCode: 500, headers, body: JSON.stringify({ error: prediction.detail || "Xato yuz berdi" }) };
+      return new Response(JSON.stringify({ error: prediction.detail || "Xato yuz berdi" }), { status: 500, headers });
     }
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ id: prediction.id, status: prediction.status }),
-    };
+    return new Response(JSON.stringify({ id: prediction.id, status: prediction.status }), { status: 200, headers });
   } catch (err) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers });
   }
-};
+}
+
+export async function onRequestOptions() {
+  return new Response("", {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type",
+    }
+  });
+}
