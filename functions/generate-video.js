@@ -16,7 +16,7 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({ error: "Prompt kerak!" }), { status: 400, headers });
     }
 
-    const token = context.env.REPLICATE_API_TOKEN || "r8_LAHhovtmITvC2hzIfREBkbWQJFytQzo1UcZ4B";
+    const token = context.env.REPLICATE_API_TOKEN;
     
     if (!token) {
       return new Response(JSON.stringify({ error: "Token yo'q" }), { status: 500, headers });
