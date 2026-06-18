@@ -1,17 +1,18 @@
-exports.handler = async function (event, context) {
+export async function onRequestGet(context) {
   const headers = {
     "Access-Control-Allow-Origin": "*",
     "Content-Type": "application/json",
   };
 
-  const { id } = event.queryStringParameters || {};
+  const url = new URL(context.request.url);
+  const id = url.searchParams.get("id");
 
   if (!id) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: "ID kerak" }) };
+    return new Response(JSON.stringify({ error: "ID kerak" }), { status: 400, headers });
   }
 
   try {
-    const token = process.env.REPLICATE_API_TOKEN;
+    const token = context.env.REPLICATE_API_TOKEN;
 
     const response = await fetch(`https://api.replicate.com/v1/predictions/${id}`, {
       headers: { "Authorization": `Bearer ${token}` },
@@ -19,17 +20,13 @@ exports.handler = async function (event, context) {
 
     const data = await response.json();
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        id: data.id,
-        status: data.status,
-        output: data.output,
-        error: data.error,
-      }),
-    };
+    return new Response(JSON.stringify({
+      id: data.id,
+      status: data.status,
+      output: data.output,
+      error: data.error,
+    }), { status: 200, headers });
   } catch (err) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers });
   }
-};
+}
