@@ -14,7 +14,7 @@ exports.handler = async function (event, context) {
   }
 
   try {
-    const { prompt } = JSON.parse(event.body);
+    const { prompt, platform } = JSON.parse(event.body);
 
     if (!prompt) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: "Prompt kerak!" }) };
@@ -22,15 +22,39 @@ exports.handler = async function (event, context) {
 
     const token = process.env.REPLICATE_API_TOKEN;
 
-    const response = await fetch("https://api.replicate.com/v1/models/minimax/video-01/predictions", {
+    // Har bir platform uchun model va input
+    const models = {
+      minimax: {
+        url: "https://api.replicate.com/v1/models/minimax/video-01/predictions",
+        input: { prompt, prompt_optimizer: true }
+      },
+      runway: {
+        url: "https://api.replicate.com/v1/models/luma/ray-flash-2-540p/predictions",
+        input: { prompt, duration: 5, aspect_ratio: "16:9" }
+      },
+      pika: {
+        url: "https://api.replicate.com/v1/models/minimax/video-01-live/predictions",
+        input: { prompt, prompt_optimizer: true }
+      },
+      hailuo: {
+        url: "https://api.replicate.com/v1/models/minimax/video-01/predictions",
+        input: { prompt, prompt_optimizer: true }
+      },
+      seedance: {
+        url: "https://api.replicate.com/v1/models/bytedance/seedance-1-lite/predictions",
+        input: { prompt, duration: 5, resolution: "480p", watermark: false }
+      }
+    };
+
+    const selected = models[platform] || models.minimax;
+
+    const response = await fetch(selected.url, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        input: { prompt: prompt, prompt_optimizer: true },
-      }),
+      body: JSON.stringify({ input: selected.input }),
     });
 
     const prediction = await response.json();
