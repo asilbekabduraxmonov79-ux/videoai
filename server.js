@@ -42,11 +42,11 @@ try {
 }
 
 // ============================================
-// KREDIT TEKSHIRISH
+// KREDIT TEKSHIRISH (1 KREDIT)
 // ============================================
 async function checkAndUseCredits(uid, amount = 1) {
   if (!db || !admin) {
-    return { success: true, credits: 999 };
+    return { success: true, credits: 1 };
   }
 
   try {
@@ -71,7 +71,7 @@ async function checkAndUseCredits(uid, amount = 1) {
     return { success: true, credits: credits - amount };
   } catch (err) {
     console.error('Kredit xatosi:', err);
-    return { success: true, credits: 999 };
+    return { success: true, credits: 1 };
   }
 }
 
@@ -83,12 +83,12 @@ app.get('/api/get-credits/:uid', async (req, res) => {
     const { uid } = req.params;
     if (!uid) return res.status(400).json({ error: 'UID kerak!' });
 
-    if (!db) return res.json({ credits: 999 });
+    if (!db) return res.json({ credits: 1 });
 
     const userRef = db.collection('users').doc(uid);
     const snap = await userRef.get();
     
-    if (!snap.exists()) return res.json({ credits: 3 });
+    if (!snap.exists()) return res.json({ credits: 1 });
     
     res.json({ credits: snap.data().credits || 0 });
   } catch (err) {
@@ -109,7 +109,7 @@ if (!fs.existsSync(uploadsDir)) {
 app.use('/uploads', express.static(uploadsDir));
 
 // ============================================
-// 1. PROMPT ASOSIDA VIDEO YARATISH (5 ta AI model)
+// 1. PROMPT ASOSIDA VIDEO YARATISH
 // ============================================
 app.post('/api/generate-video', async (req, res) => {
   try {
@@ -152,7 +152,6 @@ app.post('/api/generate-video', async (req, res) => {
       return res.status(500).json({ error: data.detail || 'Replicate xatosi' });
     }
 
-    // NATIJANI KUTISH VA QAYTARISH
     let attempts = 0;
     const maxAttempts = 40;
 
@@ -231,7 +230,6 @@ app.post('/api/image-to-video', async (req, res) => {
     const token = process.env.REPLICATE_API_TOKEN;
     if (!token) return res.status(500).json({ error: 'REPLICATE_API_TOKEN yo\'q' });
 
-    // Rasmni saqlash
     const base64Data = image.split(',')[1];
     const imageBuffer = Buffer.from(base64Data, 'base64');
     const timestamp = Date.now();
@@ -242,7 +240,6 @@ app.post('/api/image-to-video', async (req, res) => {
     const imageUrl = `https://videoai-did4.onrender.com/uploads/${filename}`;
     console.log('🖼️ Rasm saqlandi:', filename);
 
-    // Replicate API - rasmni videoga aylantirish
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -263,7 +260,6 @@ app.post('/api/image-to-video', async (req, res) => {
       return res.status(500).json({ error: data.detail || 'Replicate xatosi' });
     }
 
-    // NATIJANI KUTISH VA QAYTARISH
     let attempts = 0;
     const maxAttempts = 40;
 
@@ -301,7 +297,7 @@ app.post('/api/image-to-video', async (req, res) => {
 });
 
 // ============================================
-// 4. VIDEONI SAQLASH (BEPUL - GENERATSIYASIZ)
+// 4. VIDEONI SAQLASH (BEPUL)
 // ============================================
 app.post('/api/upload-video', async (req, res) => {
   try {
