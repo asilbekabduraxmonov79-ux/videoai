@@ -1,2 +1,13 @@
-[functions]
-  directory = "netlify/functions"
+[build]
+  publish = "."
+  functions = "functions"
+
+[[redirects]]
+  from = "/functions/generate-video"
+  to = "/.netlify/functions/generate-video"
+  status = 200
+
+[[redirects]]
+  from = "/functions/check-status"
+  to = "/.netlify/functions/check-status"
+  status = 200
