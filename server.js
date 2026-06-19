@@ -109,7 +109,7 @@ if (!fs.existsSync(uploadsDir)) {
 app.use('/uploads', express.static(uploadsDir));
 
 // ============================================
-// 1. PROMPT ASOSIDA VIDEO YARATISH
+// 1. PROMPT ASOSIDA VIDEO YARATISH (5 ta AI model)
 // ============================================
 app.post('/api/generate-video', async (req, res) => {
   try {
@@ -242,7 +242,7 @@ app.post('/api/image-to-video', async (req, res) => {
     const imageUrl = `https://videoai-did4.onrender.com/uploads/${filename}`;
     console.log('🖼️ Rasm saqlandi:', filename);
 
-    // Replicate API
+    // Replicate API - rasmni videoga aylantirish
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -301,94 +301,7 @@ app.post('/api/image-to-video', async (req, res) => {
 });
 
 // ============================================
-// 4. VIDEONI TAHRIRLASH (EDIT)
-// ============================================
-app.post('/api/edit-video', async (req, res) => {
-  try {
-    const { video, prompt, uid } = req.body;
-    
-    if (!video) return res.status(400).json({ error: 'Video yuklanmagan!' });
-    if (!prompt) return res.status(400).json({ error: 'Prompt yozilmagan!' });
-    if (!uid) return res.status(400).json({ error: 'UID kerak!' });
-
-    const creditCheck = await checkAndUseCredits(uid);
-    if (!creditCheck.success) {
-      return res.status(400).json({ error: creditCheck.error });
-    }
-
-    const token = process.env.REPLICATE_API_TOKEN;
-    if (!token) return res.status(500).json({ error: 'REPLICATE_API_TOKEN yo\'q' });
-
-    const base64Data = video.split(',')[1];
-    const videoBuffer = Buffer.from(base64Data, 'base64');
-    const timestamp = Date.now();
-    const filename = `video_${timestamp}.mp4`;
-    const filePath = path.join(uploadsDir, filename);
-    fs.writeFileSync(filePath, videoBuffer);
-
-    const videoUrl = `https://videoai-did4.onrender.com/uploads/${filename}`;
-
-    const response = await fetch('https://api.replicate.com/v1/predictions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        version: "wan-video/wan-2.7-videoedit",
-        input: {
-          video: videoUrl,
-          prompt: prompt,
-          resolution: '720p',
-          audio_setting: 'origin'
-        }
-      })
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      return res.status(500).json({ error: data.detail || 'Replicate xatosi' });
-    }
-
-    // NATIJANI KUTISH VA QAYTARISH
-    let attempts = 0;
-    const maxAttempts = 40;
-
-    const checkStatus = async () => {
-      const statusRes = await fetch(`https://api.replicate.com/v1/predictions/${data.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const statusData = await statusRes.json();
-      
-      if (statusData.status === 'succeeded') {
-        const videoUrl = Array.isArray(statusData.output) ? statusData.output[0] : statusData.output;
-        return res.json({
-          success: true,
-          videoUrl: videoUrl,
-          credits: creditCheck.credits,
-          message: 'Video tayyor!'
-        });
-      } else if (statusData.status === 'failed') {
-        return res.status(500).json({ error: statusData.error || 'Generatsiya muvaffaqiyatsiz' });
-      } else {
-        if (attempts >= maxAttempts) {
-          return res.status(500).json({ error: 'Vaqt tugadi' });
-        }
-        attempts++;
-        setTimeout(checkStatus, 3000);
-      }
-    };
-
-    checkStatus();
-
-  } catch (err) {
-    console.error('❌ edit-video xatosi:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ============================================
-// 5. VIDEONI SAQLASH (BEPUL)
+// 4. VIDEONI SAQLASH (BEPUL - GENERATSIYASIZ)
 // ============================================
 app.post('/api/upload-video', async (req, res) => {
   try {
@@ -413,7 +326,7 @@ app.post('/api/upload-video', async (req, res) => {
 });
 
 // ============================================
-// 6. BARCHA FAYLLARNI KO'RISH
+// 5. BARCHA FAYLLARNI KO'RISH
 // ============================================
 app.get('/api/videos', (req, res) => {
   try {
@@ -432,7 +345,7 @@ app.get('/api/videos', (req, res) => {
 });
 
 // ============================================
-// 7. ROOT
+// 6. ROOT
 // ============================================
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
