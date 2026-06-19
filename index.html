@@ -285,7 +285,7 @@ window.go = async () => {
   document.getElementById('vbox').innerHTML = '<div class="loader"><div class="spin"></div><div class="ltext" id="lt">Yuborilmoqda...</div><div class="pbar"><div class="pfill" id="pf"></div></div></div>';
   setP(10, 'So\'rov yuborilmoqda...');
   try {
-    const r = await fetch('/functions/generate-video', {
+    const r = await fetch('/api/generate-video', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({prompt, platform: selectedPlatform})
     });
@@ -309,7 +309,7 @@ function startPoll(id) {
     n++;
     setP(Math.min(30 + n*1.5, 90), msgs[Math.floor(n/15)%4]);
     try {
-      const r = await fetch('/functions/check-status?id='+id);
+      const r = await fetch('/api/check-status?id='+id);
       const d = await r.json();
       if (d.status==='succeeded' && d.output) {
         clearInterval(poll); setP(100, 'Tayyor! 🎉');
@@ -342,4 +342,4 @@ function resetBtn(){const b=document.getElementById('btn');b.disabled=false;b.te
 function showToast(m,i='✦'){const t=document.getElementById('toast');document.getElementById('tm').textContent=m;document.getElementById('ti').textContent=i;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 </script>
 </body>
-</html>
+</html>                                                                           </html>              
