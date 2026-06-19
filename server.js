@@ -4,7 +4,95 @@ const port = process.env.PORT || 3000;
 const fs = require('fs');
 const path = require('path');
 
+// ============================================
+// FIREBASE ADMIN SDK (kredit boshqaruvi uchun)
+// ============================================
+const admin = require('firebase-admin');
+
+// Firebase Admin SDK ni ishga tushirish
+if (!admin.apps.length) {
+  try {
+    // Render Environment Variables dan o'qish
+    const serviceAccount = {
+      type: "service_account",
+      project_id: process.env.FIREBASE_PROJECT_ID,
+      private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+      private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      client_email: process.env.FIREBASE_CLIENT_EMAIL,
+      client_id: process.env.FIREBASE_CLIENT_ID,
+      auth_uri: "https://accounts.google.com/o/oauth2/auth",
+      token_uri: "https://oauth2.googleapis.com/token",
+      auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+      client_x509_cert_url: process.env.FIREBASE_CLIENT_CERT_URL
+    };
+
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    console.log('✅ Firebase Admin SDK initialized');
+  } catch (err) {
+    console.error('❌ Firebase Admin SDK xatosi:', err.message);
+  }
+}
+
+const db = admin.firestore();
+
+// ============================================
+// KREDIT TEKSHIRISH VA KAMAYTIRISH (MARKAZIY)
+// ============================================
+async function checkAndUseCredits(uid, amount = 1) {
+  try {
+    if (!uid) {
+      return { success: false, error: 'UID kerak!' };
+    }
+
+    const userRef = db.collection('users').doc(uid);
+    const snap = await userRef.get();
+    
+    if (!snap.exists) {
+      return { success: false, error: 'Foydalanuvchi topilmadi!' };
+    }
+    
+    const credits = snap.data().credits || 0;
+    if (credits < amount) {
+      return { success: false, error: 'Kredit yetarli emas! 💎' };
+    }
+    
+    await userRef.update({
+      credits: admin.firestore.FieldValue.increment(-amount)
+    });
+    
+    return { success: true, credits: credits - amount };
+  } catch (err) {
+    console.error('Kredit xatosi:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+// ============================================
+// KREDIT BALANSINI TEKSHIRISH
+// ============================================
+app.get('/api/get-credits/:uid', async (req, res) => {
+  try {
+    const { uid } = req.params;
+    if (!uid) return res.status(400).json({ error: 'UID kerak!' });
+
+    const userRef = db.collection('users').doc(uid);
+    const snap = await userRef.get();
+    
+    if (!snap.exists) {
+      return res.json({ credits: 0 });
+    }
+    
+    res.json({ credits: snap.data().credits || 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
 // Middleware
+// ============================================
 app.use(express.json({ limit: '100mb' }));
 app.use(express.static('.'));
 
@@ -16,37 +104,29 @@ if (!fs.existsSync(uploadsDir)) {
 app.use('/uploads', express.static(uploadsDir));
 
 // ============================================
-// 1. Prompt asosida video yaratish (5 ta AI model)
+// 1. PROMPT ASOSIDA VIDEO YARATISH
 // ============================================
 app.post('/api/generate-video', async (req, res) => {
   try {
-    const { prompt, platform } = req.body;
+    const { prompt, platform, uid } = req.body;
     if (!prompt) return res.status(400).json({ error: 'Prompt kerak!' });
+    if (!uid) return res.status(400).json({ error: 'UID kerak!' });
+
+    // Kredit tekshirish
+    const creditCheck = await checkAndUseCredits(uid);
+    if (!creditCheck.success) {
+      return res.status(400).json({ error: creditCheck.error });
+    }
 
     const token = process.env.REPLICATE_API_TOKEN;
     if (!token) return res.status(500).json({ error: 'REPLICATE_API_TOKEN yo\'q' });
 
     const models = {
-      minimax: {
-        version: "minimax/video-01",
-        input: { prompt, prompt_optimizer: true }
-      },
-      runway: {
-        version: "luma/ray-flash-2-540p",
-        input: { prompt, duration: 5, aspect_ratio: "16:9" }
-      },
-      pika: {
-        version: "minimax/video-01-live",
-        input: { prompt, prompt_optimizer: true }
-      },
-      hailuo: {
-        version: "minimax/video-01",
-        input: { prompt, prompt_optimizer: true }
-      },
-      seedance: {
-        version: "bytedance/seedance-1-lite",
-        input: { prompt, duration: 5, resolution: "480p", watermark: false }
-      }
+      minimax: { version: "minimax/video-01", input: { prompt, prompt_optimizer: true } },
+      runway: { version: "luma/ray-flash-2-540p", input: { prompt, duration: 5, aspect_ratio: "16:9" } },
+      pika: { version: "minimax/video-01-live", input: { prompt, prompt_optimizer: true } },
+      hailuo: { version: "minimax/video-01", input: { prompt, prompt_optimizer: true } },
+      seedance: { version: "bytedance/seedance-1-lite", input: { prompt, duration: 5, resolution: "480p", watermark: false } }
     };
 
     const selected = models[platform] || models.minimax;
@@ -68,14 +148,18 @@ app.post('/api/generate-video', async (req, res) => {
       return res.status(500).json({ error: data.detail || 'Replicate xatosi' });
     }
 
-    res.json({ id: data.id, status: data.status });
+    res.json({ 
+      id: data.id, 
+      status: data.status,
+      credits: creditCheck.credits
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // ============================================
-// 2. Video holatini tekshirish
+// 2. VIDEO HOLATINI TEKSHIRISH
 // ============================================
 app.get('/api/check-status', async (req, res) => {
   try {
@@ -100,18 +184,25 @@ app.get('/api/check-status', async (req, res) => {
 });
 
 // ============================================
-// 3. Rasmni videoga aylantirish (IMAGE-TO-VIDEO)
+// 3. RASMNI JONLANTIRISH (IMAGE-TO-VIDEO)
 // ============================================
 app.post('/api/image-to-video', async (req, res) => {
   try {
-    const { image, prompt } = req.body;
+    const { image, prompt, uid } = req.body;
     
     if (!image) return res.status(400).json({ error: 'Rasm yuklanmagan!' });
+    if (!uid) return res.status(400).json({ error: 'UID kerak!' });
+
+    // Kredit tekshirish
+    const creditCheck = await checkAndUseCredits(uid);
+    if (!creditCheck.success) {
+      return res.status(400).json({ error: creditCheck.error });
+    }
 
     const token = process.env.REPLICATE_API_TOKEN;
     if (!token) return res.status(500).json({ error: 'REPLICATE_API_TOKEN yo\'q' });
 
-    // Rasmni vaqtinchalik faylga saqlash
+    // Rasmni saqlash
     const base64Data = image.split(',')[1];
     const imageBuffer = Buffer.from(base64Data, 'base64');
     const timestamp = Date.now();
@@ -148,6 +239,7 @@ app.post('/api/image-to-video', async (req, res) => {
       success: true, 
       id: data.id, 
       status: data.status,
+      credits: creditCheck.credits,
       message: 'Rasm jonlantirilmoqda...'
     });
 
@@ -158,19 +250,26 @@ app.post('/api/image-to-video', async (req, res) => {
 });
 
 // ============================================
-// 4. Videoni tahrirlash (VIDEO EDITING)
+// 4. VIDEONI TAHRIRLASH (EDIT)
 // ============================================
 app.post('/api/edit-video', async (req, res) => {
   try {
-    const { video, prompt } = req.body;
+    const { video, prompt, uid } = req.body;
     
     if (!video) return res.status(400).json({ error: 'Video yuklanmagan!' });
     if (!prompt) return res.status(400).json({ error: 'Prompt yozilmagan!' });
+    if (!uid) return res.status(400).json({ error: 'UID kerak!' });
+
+    // Kredit tekshirish
+    const creditCheck = await checkAndUseCredits(uid);
+    if (!creditCheck.success) {
+      return res.status(400).json({ error: creditCheck.error });
+    }
 
     const token = process.env.REPLICATE_API_TOKEN;
     if (!token) return res.status(500).json({ error: 'REPLICATE_API_TOKEN yo\'q' });
 
-    // Videoni vaqtinchalik faylga saqlash
+    // Videoni saqlash
     const base64Data = video.split(',')[1];
     const videoBuffer = Buffer.from(base64Data, 'base64');
     const timestamp = Date.now();
@@ -182,7 +281,7 @@ app.post('/api/edit-video', async (req, res) => {
     console.log('📹 Video saqlandi:', filename);
     console.log('📝 Prompt:', prompt);
 
-    // Replicate API - videoni tahrirlash
+    // Replicate API - video tahrirlash
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -209,6 +308,7 @@ app.post('/api/edit-video', async (req, res) => {
       success: true, 
       id: data.id, 
       status: data.status,
+      credits: creditCheck.credits,
       message: 'Video tahrirlanmoqda...'
     });
 
@@ -219,23 +319,33 @@ app.post('/api/edit-video', async (req, res) => {
 });
 
 // ============================================
-// 5. Umumiy generatsiya (image-to-video + edit)
+// 5. UMUMIY GENERATSIYA
 // ============================================
 app.post('/api/generate-from-video', async (req, res) => {
   try {
-    const { video, prompt, mode } = req.body;
-    // mode: 'image-to-video' yoki 'edit-video'
+    const { video, prompt, mode, uid } = req.body;
     
     if (!video) return res.status(400).json({ error: 'Video yoki rasm yuklanmagan!' });
+    if (!uid) return res.status(400).json({ error: 'UID kerak!' });
+
+    // Kredit tekshirish (faqat generatsiya uchun)
+    let creditCheck = { success: true };
+    if (mode === 'image-to-video' || mode === 'edit-video') {
+      creditCheck = await checkAndUseCredits(uid);
+      if (!creditCheck.success) {
+        return res.status(400).json({ error: creditCheck.error });
+      }
+    }
 
     const token = process.env.REPLICATE_API_TOKEN;
     if (!token) return res.status(500).json({ error: 'REPLICATE_API_TOKEN yo\'q' });
 
-    // 1. Faylni saqlash
+    // Faylni saqlash
     const base64Data = video.split(',')[1];
     const videoBuffer = Buffer.from(base64Data, 'base64');
     const timestamp = Date.now();
-    const filename = `upload_${timestamp}.${mode === 'image-to-video' ? 'jpg' : 'mp4'}`;
+    const ext = mode === 'image-to-video' ? 'jpg' : 'mp4';
+    const filename = `upload_${timestamp}.${ext}`;
     const filePath = path.join(uploadsDir, filename);
     fs.writeFileSync(filePath, videoBuffer);
 
@@ -244,7 +354,7 @@ app.post('/api/generate-from-video', async (req, res) => {
     console.log('📝 Prompt:', prompt);
     console.log('🔧 Mode:', mode);
 
-    // 2. Mode bo'yicha model tanlash
+    // Mode bo'yicha model tanlash
     let model, input;
     
     if (mode === 'image-to-video') {
@@ -253,7 +363,7 @@ app.post('/api/generate-from-video', async (req, res) => {
         image: fileUrl,
         prompt: prompt || 'Animate this image with natural movement'
       };
-    } else {
+    } else if (mode === 'edit-video') {
       model = "wan-video/wan-2.7-videoedit";
       input = {
         video: fileUrl,
@@ -261,9 +371,16 @@ app.post('/api/generate-from-video', async (req, res) => {
         resolution: '720p',
         audio_setting: 'origin'
       };
+    } else {
+      // Faqat saqlash (bepul)
+      return res.json({ 
+        success: true, 
+        videoUrl: fileUrl,
+        message: 'Video saqlandi!'
+      });
     }
 
-    // 3. Replicate API ga so'rov
+    // Replicate API ga so'rov
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -285,6 +402,7 @@ app.post('/api/generate-from-video', async (req, res) => {
       success: true, 
       id: data.id, 
       status: data.status,
+      credits: creditCheck.success ? creditCheck.credits : undefined,
       message: 'Generatsiya boshlandi!'
     });
 
@@ -295,7 +413,7 @@ app.post('/api/generate-from-video', async (req, res) => {
 });
 
 // ============================================
-// 6. Yuklangan videoni saqlash
+// 6. VIDEONI SAQLASH (BEPUL)
 // ============================================
 app.post('/api/upload-video', async (req, res) => {
   try {
@@ -320,7 +438,7 @@ app.post('/api/upload-video', async (req, res) => {
 });
 
 // ============================================
-// 7. Barcha videolarni ko'rish
+// 7. BARCHA FAYLLARNI KO'RISH
 // ============================================
 app.get('/api/videos', (req, res) => {
   try {
@@ -339,14 +457,14 @@ app.get('/api/videos', (req, res) => {
 });
 
 // ============================================
-// 8. Root
+// 8. ROOT
 // ============================================
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // ============================================
-// Server start
+// SERVER START
 // ============================================
 app.listen(port, () => {
   console.log(`🚀 Server running on port ${port}`);
