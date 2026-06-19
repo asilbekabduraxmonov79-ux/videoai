@@ -42,7 +42,7 @@ try {
 }
 
 // ============================================
-// KREDIT TEKSHIRISH (1 KREDIT)
+// KREDIT TEKSHIRISH
 // ============================================
 async function checkAndUseCredits(uid, amount = 1) {
   if (!db || !admin) {
@@ -109,7 +109,7 @@ if (!fs.existsSync(uploadsDir)) {
 app.use('/uploads', express.static(uploadsDir));
 
 // ============================================
-// 1. PROMPT ASOSIDA VIDEO YARATISH
+// 1. PROMPT ASOSIDA VIDEO YARATISH (ISHLATDIGAN MODELLAR)
 // ============================================
 app.post('/api/generate-video', async (req, res) => {
   try {
@@ -125,12 +125,13 @@ app.post('/api/generate-video', async (req, res) => {
     const token = process.env.REPLICATE_API_TOKEN;
     if (!token) return res.status(500).json({ error: 'REPLICATE_API_TOKEN yo\'q' });
 
+    // ISHLAYOTGAN MODELLAR
     const models = {
-      minimax: { version: "minimax/video-01", input: { prompt, prompt_optimizer: true } },
-      runway: { version: "luma/ray-flash-2-540p", input: { prompt, duration: 5, aspect_ratio: "16:9" } },
-      pika: { version: "minimax/video-01-live", input: { prompt, prompt_optimizer: true } },
-      hailuo: { version: "minimax/video-01", input: { prompt, prompt_optimizer: true } },
-      seedance: { version: "bytedance/seedance-1-lite", input: { prompt, duration: 5, resolution: "480p", watermark: false } }
+      minimax: { version: "anotherjesse/zeroscope-v2-xl", input: { prompt: prompt, num_frames: 24, fps: 8 } },
+      runway: { version: "stability-ai/stable-video-diffusion", input: { prompt: prompt, frames_per_second: 8, video_length: 25 } },
+      pika: { version: "luma/ray-flash-2-540p", input: { prompt: prompt } },
+      hailuo: { version: "anotherjesse/zeroscope-v2-xl", input: { prompt: prompt, num_frames: 24, fps: 8 } },
+      seedance: { version: "stability-ai/stable-video-diffusion", input: { prompt: prompt, frames_per_second: 8, video_length: 25 } }
     };
 
     const selected = models[platform] || models.minimax;
@@ -297,7 +298,17 @@ app.post('/api/image-to-video', async (req, res) => {
 });
 
 // ============================================
-// 4. VIDEONI SAQLASH (BEPUL)
+// 4. VIDEONI SAQLASH (SINOVDA)
+// ============================================
+app.post('/api/generate-from-video', async (req, res) => {
+  res.json({ 
+    success: false, 
+    message: '🔧 Hozircha sinovda! Faqat prompt va rasm ishlaydi.' 
+  });
+});
+
+// ============================================
+// 5. VIDEONI SAQLASH (BEPUL)
 // ============================================
 app.post('/api/upload-video', async (req, res) => {
   try {
@@ -322,7 +333,7 @@ app.post('/api/upload-video', async (req, res) => {
 });
 
 // ============================================
-// 5. BARCHA FAYLLARNI KO'RISH
+// 6. BARCHA FAYLLARNI KO'RISH
 // ============================================
 app.get('/api/videos', (req, res) => {
   try {
@@ -341,7 +352,7 @@ app.get('/api/videos', (req, res) => {
 });
 
 // ============================================
-// 6. ROOT
+// 7. ROOT
 // ============================================
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
