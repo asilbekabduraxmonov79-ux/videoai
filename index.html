@@ -66,6 +66,20 @@
     .dlbtn{flex:1;padding:12px;background:linear-gradient(135deg,#6c47ff,#ff4fcb);border:none;border-radius:10px;color:white;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;text-align:center;display:block;}
     .shbtn{flex:1;padding:12px;background:rgba(108,71,255,0.12);border:1px solid rgba(108,71,255,0.3);border-radius:10px;color:#6c47ff;font-size:14px;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
 
+    /* AI INFO */
+    .ai-info{background:#111318;border:1px solid #1e2130;border-radius:16px;padding:18px;margin-top:20px;}
+    .ai-info h3{color:#6c47ff;font-size:16px;margin-bottom:10px;}
+    .ai-info p{color:#aab;font-size:14px;line-height:1.6;margin-bottom:6px;}
+    .ai-info video{width:100%;border-radius:12px;max-height:300px;object-fit:cover;margin-top:10px;}
+
+    /* UPLOAD SECTION */
+    .upload-section{background:#111318;border:1px solid #1e2130;border-radius:16px;padding:18px;margin-top:20px;}
+    .upload-section h3{color:#22d9a0;font-size:16px;margin-bottom:10px;}
+    .upload-section input[type="file"]{color:#e8eaf2;background:#08090d;border:1px solid #1e2130;border-radius:10px;padding:10px;width:100%;cursor:pointer;}
+    .upload-section .upload-btn{margin-top:10px;padding:10px 20px;background:linear-gradient(135deg,#22d9a0,#6c47ff);border:none;border-radius:10px;color:white;font-weight:600;cursor:pointer;}
+    .upload-section .upload-status{margin-top:8px;font-size:13px;color:#5a5f7a;}
+    .upload-section .uploaded-video{width:100%;border-radius:12px;margin-top:10px;display:none;}
+
     /* PAYMENT MODAL */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;display:none;align-items:flex-end;justify-content:center;}
     .modal-overlay.show{display:flex;}
@@ -153,6 +167,32 @@
       </div>
     </div>
   </div>
+
+  <!-- AI INFO -->
+  <div class="ai-info">
+    <h3>🤖 AI modellar haqida</h3>
+    <p><strong>Kling AI</strong> — yuqori sifatli video, realistik kadrlar, 16:9 format.</p>
+    <p><strong>Runway ML</strong> — ijodiy va nostandart videolar, eksperimental uslub.</p>
+    <p><strong>Pika Labs</strong> — tez va qisqa videolar, animatsion va karikatura uslubi.</p>
+    <p><strong>Hailuo AI</strong> — yorqin va jonli ranglar, tabiiy harakatlar.</p>
+    <p><strong>Seedance</strong> — byudjetli va samarali video, 480p formati.</p>
+    <video controls>
+      <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4"/>
+      Brauzeringiz video qo'llab-quvvatlamaydi.
+    </video>
+    <p style="color:#5a5f7a;font-size:12px;margin-top:6px;">🎬 Misol video — AI tomonidan yaratilgan namuna</p>
+  </div>
+
+  <!-- VIDEO UPLOAD + GENERATE -->
+  <div class="upload-section">
+    <h3>📤 O'z videongizni yuklang va generatsiya qiling</h3>
+    <input type="file" id="videoUpload" accept="video/*"/>
+    <br/>
+    <textarea id="uploadPrompt" placeholder="Videoni qanday o'zgartirmoqchisiz? Masalan: Make it slow motion, add cinematic colors..." style="width:100%;background:#08090d;border:1px solid #1e2130;border-radius:12px;padding:10px;color:#e8eaf2;font-family:'Space Grotesk',sans-serif;font-size:14px;resize:none;min-height:60px;margin-top:10px;outline:none;"></textarea>
+    <button class="upload-btn" onclick="generateFromVideo()">⚡ Videoni generatsiya qilish</button>
+    <div class="upload-status" id="uploadStatus"></div>
+    <video class="uploaded-video" id="uploadedVideo" controls></video>
+  </div>
 </div>
 
 <!-- PAYMENT MODAL -->
@@ -214,6 +254,7 @@ let currentUser = null;
 let credits = 0;
 let selectedPlatform = 'minimax';
 let selectedPlan = { credits: 25, price: 30000 };
+let uploadedVideoData = null;
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -235,6 +276,73 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('userAvatar').src = '';
   }
 });
+
+// Video upload handler
+document.getElementById('videoUpload').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  const status = document.getElementById('uploadStatus');
+  const video = document.getElementById('uploadedVideo');
+  
+  if (!file) return;
+  
+  if (file.size > 50 * 1024 * 1024) {
+    status.textContent = '⚠️ Fayl hajmi 50 MB dan oshmasligi kerak!';
+    status.style.color = '#ff4f4f';
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    uploadedVideoData = ev.target.result;
+    video.src = uploadedVideoData;
+    video.style.display = 'block';
+    status.textContent = '✅ Video yuklandi: ' + file.name;
+    status.style.color = '#22d9a0';
+  };
+  reader.readAsDataURL(file);
+});
+
+// Generate from uploaded video
+window.generateFromVideo = async () => {
+  if (!currentUser) { showToast('Avval kiring!', '⚠️'); return; }
+  if (!uploadedVideoData) { showToast('Avval video yuklang!', '⚠️'); return; }
+  
+  const prompt = document.getElementById('uploadPrompt').value.trim();
+  if (!prompt) { showToast('Videoni qanday o\'zgartirishni yozing!', '⚠️'); return; }
+  if (credits <= 0) { showToast('Kredit yetarli emas!', '💎'); openPayment(); return; }
+  
+  showToast('⏳ Video generatsiya qilinmoqda...', '⏳');
+  
+  try {
+    const response = await fetch('/api/generate-from-video', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        video: uploadedVideoData, 
+        prompt: prompt,
+        platform: selectedPlatform 
+      })
+    });
+    
+    const data = await response.json();
+    if (!response.ok || data.error) throw new Error(data.error || 'Server xatosi');
+    
+    credits--;
+    document.getElementById('cc').textContent = credits;
+    await updateDoc(doc(db, 'users', currentUser.uid), { credits: increment(-1) });
+    
+    // Show generated video
+    const video = document.getElementById('uploadedVideo');
+    video.src = data.videoUrl || uploadedVideoData; // Fallback
+    video.style.display = 'block';
+    document.getElementById('uploadStatus').textContent = '✅ Video generatsiya qilindi!';
+    document.getElementById('uploadStatus').style.color = '#22d9a0';
+    showToast('✅ Video generatsiya qilindi!', '🎉');
+    
+  } catch(e) {
+    showToast('Xato: ' + e.message, '❌');
+  }
+};
 
 window.loginWithGoogle = async () => {
   try { await signInWithPopup(auth, provider); }
@@ -342,4 +450,4 @@ function resetBtn(){const b=document.getElementById('btn');b.disabled=false;b.te
 function showToast(m,i='✦'){const t=document.getElementById('toast');document.getElementById('tm').textContent=m;document.getElementById('ti').textContent=i;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 </script>
 </body>
-</html>                                                                           </html>              
+</html>
