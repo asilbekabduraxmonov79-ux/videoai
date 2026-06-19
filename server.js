@@ -100,40 +100,202 @@ app.get('/api/check-status', async (req, res) => {
 });
 
 // ============================================
-// 3. Yuklangan videoni saqlash (GENERATSIYASIZ)
+// 3. Rasmni videoga aylantirish (IMAGE-TO-VIDEO)
 // ============================================
-app.post('/api/generate-from-video', async (req, res) => {
+app.post('/api/image-to-video', async (req, res) => {
   try {
-    const { video, prompt } = req.body;
+    const { image, prompt } = req.body;
     
-    if (!video) return res.status(400).json({ error: 'Video yuklanmagan!' });
+    if (!image) return res.status(400).json({ error: 'Rasm yuklanmagan!' });
 
-    // Videoni vaqtinchalik faylga saqlash
-    const base64Data = video.split(',')[1];
-    const videoBuffer = Buffer.from(base64Data, 'base64');
+    const token = process.env.REPLICATE_API_TOKEN;
+    if (!token) return res.status(500).json({ error: 'REPLICATE_API_TOKEN yo\'q' });
+
+    // Rasmni vaqtinchalik faylga saqlash
+    const base64Data = image.split(',')[1];
+    const imageBuffer = Buffer.from(base64Data, 'base64');
     const timestamp = Date.now();
-    const filename = `upload_${timestamp}.mp4`;
+    const filename = `image_${timestamp}.jpg`;
     const filePath = path.join(uploadsDir, filename);
-    fs.writeFileSync(filePath, videoBuffer);
+    fs.writeFileSync(filePath, imageBuffer);
 
-    console.log('📹 Video saqlandi:', filename);
-    console.log('📝 Prompt:', prompt || 'Yo\'q');
+    const imageUrl = `https://videoai-did4.onrender.com/uploads/${filename}`;
+    console.log('🖼️ Rasm saqlandi:', filename);
+    console.log('📝 Prompt:', prompt);
 
-    res.json({
-      success: true,
-      message: 'Video saqlandi!',
-      videoUrl: `https://videoai-did4.onrender.com/uploads/${filename}`,
-      filename: filename
+    // Replicate API - rasmni videoga aylantirish
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        version: "wan-video/wan-2.2-i2v-fast",
+        input: {
+          image: imageUrl,
+          prompt: prompt || 'Animate this image with natural movement'
+        }
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      return res.status(500).json({ error: data.detail || 'Replicate xatosi' });
+    }
+
+    res.json({ 
+      success: true, 
+      id: data.id, 
+      status: data.status,
+      message: 'Rasm jonlantirilmoqda...'
     });
 
   } catch (err) {
-    console.error('❌ generate-from-video xatosi:', err);
+    console.error('❌ image-to-video xatosi:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
 // ============================================
-// 4. Yuklangan videoni saqlash (ixtiyoriy)
+// 4. Videoni tahrirlash (VIDEO EDITING)
+// ============================================
+app.post('/api/edit-video', async (req, res) => {
+  try {
+    const { video, prompt } = req.body;
+    
+    if (!video) return res.status(400).json({ error: 'Video yuklanmagan!' });
+    if (!prompt) return res.status(400).json({ error: 'Prompt yozilmagan!' });
+
+    const token = process.env.REPLICATE_API_TOKEN;
+    if (!token) return res.status(500).json({ error: 'REPLICATE_API_TOKEN yo\'q' });
+
+    // Videoni vaqtinchalik faylga saqlash
+    const base64Data = video.split(',')[1];
+    const videoBuffer = Buffer.from(base64Data, 'base64');
+    const timestamp = Date.now();
+    const filename = `video_${timestamp}.mp4`;
+    const filePath = path.join(uploadsDir, filename);
+    fs.writeFileSync(filePath, videoBuffer);
+
+    const videoUrl = `https://videoai-did4.onrender.com/uploads/${filename}`;
+    console.log('📹 Video saqlandi:', filename);
+    console.log('📝 Prompt:', prompt);
+
+    // Replicate API - videoni tahrirlash
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        version: "wan-video/wan-2.7-videoedit",
+        input: {
+          video: videoUrl,
+          prompt: prompt,
+          resolution: '720p',
+          audio_setting: 'origin'
+        }
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      return res.status(500).json({ error: data.detail || 'Replicate xatosi' });
+    }
+
+    res.json({ 
+      success: true, 
+      id: data.id, 
+      status: data.status,
+      message: 'Video tahrirlanmoqda...'
+    });
+
+  } catch (err) {
+    console.error('❌ edit-video xatosi:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// 5. Umumiy generatsiya (image-to-video + edit)
+// ============================================
+app.post('/api/generate-from-video', async (req, res) => {
+  try {
+    const { video, prompt, mode } = req.body;
+    // mode: 'image-to-video' yoki 'edit-video'
+    
+    if (!video) return res.status(400).json({ error: 'Video yoki rasm yuklanmagan!' });
+
+    const token = process.env.REPLICATE_API_TOKEN;
+    if (!token) return res.status(500).json({ error: 'REPLICATE_API_TOKEN yo\'q' });
+
+    // 1. Faylni saqlash
+    const base64Data = video.split(',')[1];
+    const videoBuffer = Buffer.from(base64Data, 'base64');
+    const timestamp = Date.now();
+    const filename = `upload_${timestamp}.${mode === 'image-to-video' ? 'jpg' : 'mp4'}`;
+    const filePath = path.join(uploadsDir, filename);
+    fs.writeFileSync(filePath, videoBuffer);
+
+    const fileUrl = `https://videoai-did4.onrender.com/uploads/${filename}`;
+    console.log('📁 Fayl saqlandi:', filename);
+    console.log('📝 Prompt:', prompt);
+    console.log('🔧 Mode:', mode);
+
+    // 2. Mode bo'yicha model tanlash
+    let model, input;
+    
+    if (mode === 'image-to-video') {
+      model = "wan-video/wan-2.2-i2v-fast";
+      input = {
+        image: fileUrl,
+        prompt: prompt || 'Animate this image with natural movement'
+      };
+    } else {
+      model = "wan-video/wan-2.7-videoedit";
+      input = {
+        video: fileUrl,
+        prompt: prompt || 'Enhance this video',
+        resolution: '720p',
+        audio_setting: 'origin'
+      };
+    }
+
+    // 3. Replicate API ga so'rov
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        version: model,
+        input: input
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      return res.status(500).json({ error: data.detail || 'Replicate xatosi' });
+    }
+
+    res.json({ 
+      success: true, 
+      id: data.id, 
+      status: data.status,
+      message: 'Generatsiya boshlandi!'
+    });
+
+  } catch (err) {
+    console.error('❌ Xato:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// 6. Yuklangan videoni saqlash
 // ============================================
 app.post('/api/upload-video', async (req, res) => {
   try {
@@ -158,12 +320,12 @@ app.post('/api/upload-video', async (req, res) => {
 });
 
 // ============================================
-// 5. Barcha videolarni ko'rish
+// 7. Barcha videolarni ko'rish
 // ============================================
 app.get('/api/videos', (req, res) => {
   try {
     const files = fs.readdirSync(uploadsDir);
-    const videos = files.filter(f => f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mov'));
+    const videos = files.filter(f => f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mov') || f.endsWith('.jpg') || f.endsWith('.png'));
     res.json({ 
       videos: videos.map(f => ({
         name: f,
@@ -177,7 +339,7 @@ app.get('/api/videos', (req, res) => {
 });
 
 // ============================================
-// 6. Root
+// 8. Root
 // ============================================
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
