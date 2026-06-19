@@ -307,12 +307,15 @@ window.payWithGooglePlay = () => {
   showToast('Google Play to\'lov tizimi tez kunda!', '🔄');
 };
 
-// PROMPT BASED VIDEO
+// ============================================
+// PROMPT ASOSIDA VIDEO (to'g'rilangan)
+// ============================================
 window.go = async () => {
   if (!currentUser) { showToast('Avval kiring!', '⚠️'); return; }
   const prompt = document.getElementById('prompt').value.trim();
   if (!prompt) { showToast('Prompt yozing!', '⚠️'); return; }
   if (credits <= 0) { showToast('Kredit yetarli emas!', '💎'); openPayment(); return; }
+  
   document.getElementById('err').classList.remove('show');
   const btn = document.getElementById('btn');
   btn.disabled = true; btn.textContent = '⏳ Yaratilmoqda...';
@@ -320,18 +323,26 @@ window.go = async () => {
   document.getElementById('drow').style.display = 'none';
   document.getElementById('vbox').innerHTML = '<div class="loader"><div class="spin"></div><div class="ltext" id="lt">Yuborilmoqda...</div><div class="pbar"><div class="pfill" id="pf"></div></div></div>';
   setP(10, 'So\'rov yuborilmoqda...');
+  
   try {
     const r = await fetch('/api/generate-video', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({prompt, platform: selectedPlatform})
+      body: JSON.stringify({prompt, platform: selectedPlatform, uid: currentUser.uid})
     });
     const d = await r.json();
     if (!r.ok || d.error) throw new Error(d.error || 'Server xatosi');
-    credits--;
-    document.getElementById('cc').textContent = credits;
-    await updateDoc(doc(db, 'users', currentUser.uid), { credits: increment(-1) });
-    setP(30, 'Video yaratilmoqda...');
-    startPoll(d.id);
+    
+    if (d.credits !== undefined) {
+      credits = d.credits;
+      document.getElementById('cc').textContent = credits;
+    }
+    
+    if (d.videoUrl) {
+      showVideo(d.videoUrl);
+    } else {
+      setP(30, 'Video yaratilmoqda...');
+      startPoll(d.id);
+    }
   } catch(e) {
     showErr(e.message);
     btn.disabled = false; btn.textContent = '✦ Video Yaratish';
@@ -416,21 +427,30 @@ window.generateFromVideo = async () => {
       const response = await fetch('/api/generate-from-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ video: videoData, prompt: prompt })
+        body: JSON.stringify({ video: videoData, prompt: prompt, uid: currentUser.uid })
       });
 
       const data = await response.json();
       if (!response.ok || data.error) throw new Error(data.error || 'Server xatosi');
 
-      credits--;
-      document.getElementById('cc').textContent = credits;
-      await updateDoc(doc(db, 'users', currentUser.uid), { credits: increment(-1) });
+      if (data.credits !== undefined) {
+        credits = data.credits;
+        document.getElementById('cc').textContent = credits;
+      }
 
-      status.textContent = '✅ Video saqlandi!';
-      status.style.color = '#22d9a0';
-      video.src = data.videoUrl || videoData;
-      video.style.display = 'block';
-      showToast('Video saqlandi!', '✅');
+      if (data.videoUrl) {
+        video.src = data.videoUrl;
+        video.style.display = 'block';
+        status.textContent = '✅ Video tayyor!';
+        status.style.color = '#22d9a0';
+        showToast('Video tayyor! 🎬', '✅');
+      } else {
+        status.textContent = '✅ Video saqlandi!';
+        status.style.color = '#22d9a0';
+        video.src = videoData;
+        video.style.display = 'block';
+        showToast('Video saqlandi!', '✅');
+      }
     };
     reader.readAsDataURL(file);
   } catch(e) {
@@ -441,15 +461,16 @@ window.generateFromVideo = async () => {
 };
 
 // ============================================
-// IMAGE TO VIDEO
+// RASMNI JONLANTIRISH (to'g'rilangan)
 // ============================================
 window.generateImageToVideo = async () => {
   if (!currentUser) { showToast('Avval kiring!', '⚠️'); return; }
+  
   const fileInput = document.getElementById('imageUpload');
   const prompt = document.getElementById('imagePrompt').value.trim();
   const status = document.getElementById('imageUploadStatus');
   const video = document.getElementById('imageResultVideo');
-
+  
   if (!fileInput.files || fileInput.files.length === 0) {
     status.textContent = '⚠️ Avval rasm tanlang!';
     status.style.color = '#ff4f4f';
@@ -478,46 +499,56 @@ window.generateImageToVideo = async () => {
       const response = await fetch('/api/image-to-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: imageData, prompt: prompt })
+        body: JSON.stringify({ 
+          image: imageData, 
+          prompt: prompt, 
+          uid: currentUser.uid 
+        })
       });
 
       const data = await response.json();
       if (!response.ok || data.error) throw new Error(data.error || 'Server xatosi');
 
-      credits--;
-      document.getElementById('cc').textContent = credits;
-      await updateDoc(doc(db, 'users', currentUser.uid), { credits: increment(-1) });
+      if (data.credits !== undefined) {
+        credits = data.credits;
+        document.getElementById('cc').textContent = credits;
+      }
 
-      status.textContent = '⏳ Generatsiya boshlandi...';
-      status.style.color = '#ffd947';
-
-      // Poll for status
-      let attempts = 0;
-      const maxAttempts = 40;
-      const checkStatus = async () => {
-        const statusRes = await fetch(`/api/check-status?id=${data.id}`);
-        const statusData = await statusRes.json();
-        if (statusData.status === 'succeeded') {
-          const videoUrl = Array.isArray(statusData.output) ? statusData.output[0] : statusData.output;
-          video.src = videoUrl;
-          video.style.display = 'block';
-          status.textContent = '✅ Video tayyor!';
-          status.style.color = '#22d9a0';
-          showToast('Video tayyor! 🎬', '✅');
-        } else if (statusData.status === 'failed') {
-          status.textContent = '❌ Xato: ' + (statusData.error || 'Generatsiya muvaffaqiyatsiz');
-          status.style.color = '#ff4f4f';
-        } else {
-          if (attempts >= maxAttempts) {
-            status.textContent = '⏰ Vaqt tugadi';
+      if (data.videoUrl) {
+        video.src = data.videoUrl;
+        video.style.display = 'block';
+        status.textContent = '✅ Video tayyor!';
+        status.style.color = '#22d9a0';
+        showToast('Video tayyor! 🎬', '✅');
+      } else if (data.id) {
+        status.textContent = '⏳ Generatsiya boshlandi...';
+        let attempts = 0;
+        const maxAttempts = 40;
+        const checkStatus = async () => {
+          const statusRes = await fetch(`/api/check-status?id=${data.id}`);
+          const statusData = await statusRes.json();
+          if (statusData.status === 'succeeded') {
+            const videoUrl = Array.isArray(statusData.output) ? statusData.output[0] : statusData.output;
+            video.src = videoUrl;
+            video.style.display = 'block';
+            status.textContent = '✅ Video tayyor!';
+            status.style.color = '#22d9a0';
+            showToast('Video tayyor! 🎬', '✅');
+          } else if (statusData.status === 'failed') {
+            status.textContent = '❌ Xato: ' + (statusData.error || 'Generatsiya muvaffaqiyatsiz');
             status.style.color = '#ff4f4f';
-            return;
+          } else {
+            if (attempts >= maxAttempts) {
+              status.textContent = '⏰ Vaqt tugadi';
+              status.style.color = '#ff4f4f';
+              return;
+            }
+            attempts++;
+            setTimeout(checkStatus, 3000);
           }
-          attempts++;
-          setTimeout(checkStatus, 3000);
-        }
-      };
-      checkStatus();
+        };
+        checkStatus();
+      }
     };
     reader.readAsDataURL(file);
   } catch(e) {
