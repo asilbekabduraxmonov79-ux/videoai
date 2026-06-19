@@ -42,28 +42,6 @@ try {
 }
 
 // ============================================
-// GOOGLE PLAY BILLING (IAP)
-// ============================================
-let iapClient = null;
-
-try {
-  const { GoogleIAP } = require('google-iap');
-  
-  if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
-    iapClient = new GoogleIAP({
-      clientEmail: process.env.GOOGLE_CLIENT_EMAIL,
-      privateKey: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      projectId: process.env.GOOGLE_PROJECT_ID || 'videoai-uz-2fd5d'
-    });
-    console.log('✅ Google IAP initialized');
-  } else {
-    console.log('⚠️ Google IAP Environment Variables topilmadi');
-  }
-} catch (err) {
-  console.error('⚠️ Google IAP xatosi:', err.message);
-}
-
-// ============================================
 // KREDIT TEKSHIRISH
 // ============================================
 async function checkAndUseCredits(uid, amount = 1) {
@@ -96,76 +74,6 @@ async function checkAndUseCredits(uid, amount = 1) {
     return { success: true, credits: 1 };
   }
 }
-
-// ============================================
-// GOOGLE PLAY ORQALI KREDIT SOTIB OLISH
-// ============================================
-app.post('/api/verify-google-purchase', async (req, res) => {
-  try {
-    const { productId, purchaseToken, uid } = req.body;
-    
-    if (!productId) return res.status(400).json({ error: 'Product ID kerak!' });
-    if (!purchaseToken) return res.status(400).json({ error: 'Purchase token kerak!' });
-    if (!uid) return res.status(400).json({ error: 'UID kerak!' });
-
-    if (!iapClient) {
-      return res.status(500).json({ error: 'Google IAP sozlanmagan!' });
-    }
-
-    const result = await iapClient.verifyPurchase({
-      packageName: 'uz.videoai.app',
-      productId: productId,
-      purchaseToken: purchaseToken
-    });
-
-    if (!result || result.purchaseState !== 0) {
-      return res.status(400).json({ error: 'To\'lov tasdiqlanmadi!' });
-    }
-
-    const creditMap = {
-      'credit_10': 10,
-      'credit_25': 25,
-      'credit_60': 60
-    };
-
-    const credits = creditMap[productId] || 0;
-    if (credits === 0) {
-      return res.status(400).json({ error: 'Noto\'g\'ri mahsulot!' });
-    }
-
-    const userRef = db.collection('users').doc(uid);
-    await userRef.update({
-      credits: admin.firestore.FieldValue.increment(credits)
-    });
-
-    const snap = await userRef.get();
-    const newBalance = snap.data().credits || 0;
-
-    res.json({
-      success: true,
-      message: `${credits} kredit qo'shildi!`,
-      credits: credits,
-      balance: newBalance
-    });
-
-  } catch (err) {
-    console.error('❌ Google IAP xatosi:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ============================================
-// GOOGLE PLAY MAHSULOTLARINI OLISH
-// ============================================
-app.get('/api/google-products', (req, res) => {
-  res.json({
-    products: [
-      { id: 'credit_10', credits: 10, price: '15000', currency: "so'm" },
-      { id: 'credit_25', credits: 25, price: '30000', currency: "so'm" },
-      { id: 'credit_60', credits: 60, price: '60000', currency: "so'm" }
-    ]
-  });
-});
 
 // ============================================
 // KREDIT BALANSINI TEKSHIRISH
