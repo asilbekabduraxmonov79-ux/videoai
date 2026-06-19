@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 // ============================================
-// FIREBASE ADMIN SDK (xatoliksiz ishga tushirish)
+// FIREBASE ADMIN SDK
 // ============================================
 let admin = null;
 let db = null;
@@ -39,6 +39,28 @@ try {
   }
 } catch (err) {
   console.error('⚠️ Firebase Admin SDK xatosi:', err.message);
+}
+
+// ============================================
+// GOOGLE PLAY BILLING (IAP)
+// ============================================
+let iapClient = null;
+
+try {
+  const { GoogleIAP } = require('google-iap');
+  
+  if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+    iapClient = new GoogleIAP({
+      clientEmail: process.env.GOOGLE_CLIENT_EMAIL,
+      privateKey: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      projectId: process.env.GOOGLE_PROJECT_ID || 'videoai-uz-2fd5d'
+    });
+    console.log('✅ Google IAP initialized');
+  } else {
+    console.log('⚠️ Google IAP Environment Variables topilmadi');
+  }
+} catch (err) {
+  console.error('⚠️ Google IAP xatosi:', err.message);
 }
 
 // ============================================
@@ -76,6 +98,76 @@ async function checkAndUseCredits(uid, amount = 1) {
 }
 
 // ============================================
+// GOOGLE PLAY ORQALI KREDIT SOTIB OLISH
+// ============================================
+app.post('/api/verify-google-purchase', async (req, res) => {
+  try {
+    const { productId, purchaseToken, uid } = req.body;
+    
+    if (!productId) return res.status(400).json({ error: 'Product ID kerak!' });
+    if (!purchaseToken) return res.status(400).json({ error: 'Purchase token kerak!' });
+    if (!uid) return res.status(400).json({ error: 'UID kerak!' });
+
+    if (!iapClient) {
+      return res.status(500).json({ error: 'Google IAP sozlanmagan!' });
+    }
+
+    const result = await iapClient.verifyPurchase({
+      packageName: 'uz.videoai.app',
+      productId: productId,
+      purchaseToken: purchaseToken
+    });
+
+    if (!result || result.purchaseState !== 0) {
+      return res.status(400).json({ error: 'To\'lov tasdiqlanmadi!' });
+    }
+
+    const creditMap = {
+      'credit_10': 10,
+      'credit_25': 25,
+      'credit_60': 60
+    };
+
+    const credits = creditMap[productId] || 0;
+    if (credits === 0) {
+      return res.status(400).json({ error: 'Noto\'g\'ri mahsulot!' });
+    }
+
+    const userRef = db.collection('users').doc(uid);
+    await userRef.update({
+      credits: admin.firestore.FieldValue.increment(credits)
+    });
+
+    const snap = await userRef.get();
+    const newBalance = snap.data().credits || 0;
+
+    res.json({
+      success: true,
+      message: `${credits} kredit qo'shildi!`,
+      credits: credits,
+      balance: newBalance
+    });
+
+  } catch (err) {
+    console.error('❌ Google IAP xatosi:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// GOOGLE PLAY MAHSULOTLARINI OLISH
+// ============================================
+app.get('/api/google-products', (req, res) => {
+  res.json({
+    products: [
+      { id: 'credit_10', credits: 10, price: '15000', currency: "so'm" },
+      { id: 'credit_25', credits: 25, price: '30000', currency: "so'm" },
+      { id: 'credit_60', credits: 60, price: '60000', currency: "so'm" }
+    ]
+  });
+});
+
+// ============================================
 // KREDIT BALANSINI TEKSHIRISH
 // ============================================
 app.get('/api/get-credits/:uid', async (req, res) => {
@@ -109,7 +201,7 @@ if (!fs.existsSync(uploadsDir)) {
 app.use('/uploads', express.static(uploadsDir));
 
 // ============================================
-// 1. PROMPT ASOSIDA VIDEO YARATISH (ISHLATDIGAN MODELLAR)
+// 1. PROMPT ASOSIDA VIDEO YARATISH
 // ============================================
 app.post('/api/generate-video', async (req, res) => {
   try {
@@ -125,13 +217,12 @@ app.post('/api/generate-video', async (req, res) => {
     const token = process.env.REPLICATE_API_TOKEN;
     if (!token) return res.status(500).json({ error: 'REPLICATE_API_TOKEN yo\'q' });
 
-    // ISHLAYOTGAN MODELLAR
     const models = {
-      minimax: { version: "anotherjesse/zeroscope-v2-xl", input: { prompt: prompt, num_frames: 24, fps: 8 } },
-      runway: { version: "stability-ai/stable-video-diffusion", input: { prompt: prompt, frames_per_second: 8, video_length: 25 } },
+      minimax: { version: "luma/ray-flash-2-540p", input: { prompt: prompt } },
+      runway: { version: "luma/ray-flash-2-540p", input: { prompt: prompt } },
       pika: { version: "luma/ray-flash-2-540p", input: { prompt: prompt } },
-      hailuo: { version: "anotherjesse/zeroscope-v2-xl", input: { prompt: prompt, num_frames: 24, fps: 8 } },
-      seedance: { version: "stability-ai/stable-video-diffusion", input: { prompt: prompt, frames_per_second: 8, video_length: 25 } }
+      hailuo: { version: "luma/ray-flash-2-540p", input: { prompt: prompt } },
+      seedance: { version: "luma/ray-flash-2-540p", input: { prompt: prompt } }
     };
 
     const selected = models[platform] || models.minimax;
