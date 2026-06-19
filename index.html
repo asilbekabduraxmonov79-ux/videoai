@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VideoAI.uz</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
     body{background:#08090d;color:#e8eaf2;font-family:'Space Grotesk',sans-serif;min-height:100vh;overflow-x:hidden;}
-
-    /* LOGIN SCREEN */
     .login-screen{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;overflow:hidden;}
     .login-screen.hide{display:none;}
     .login-bg{position:absolute;inset:0;background:#08090d;}
@@ -23,32 +21,25 @@
     .google-btn:hover{transform:translateY(-2px);}
     .google-btn img{width:24px;height:24px;}
     .login-note{font-size:12px;color:rgba(232,234,242,0.4);}
-
-    /* NAV */
     nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:rgba(8,9,13,0.9);backdrop-filter:blur(16px);border-bottom:1px solid #1e2130;}
     .logo{font-size:18px;font-weight:700;background:linear-gradient(135deg,#6c47ff,#ff4fcb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
     .nav-right{display:flex;align-items:center;gap:10px;}
     .badge{font-size:11px;background:rgba(108,71,255,0.15);border:1px solid rgba(108,71,255,0.3);color:#6c47ff;padding:4px 10px;border-radius:20px;}
     .credit-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(34,217,160,0.1);border:1px solid rgba(34,217,160,0.3);border-radius:10px;color:#22d9a0;font-size:13px;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
     .user-avatar{width:30px;height:30px;border-radius:50%;border:2px solid #6c47ff;cursor:pointer;}
-    .logout-btn{padding:6px 12px;background:rgba(255,79,79,0.1);border:1px solid rgba(255,79,79,0.3);border-radius:8px;color:#ff4f4f;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
-
-    /* PLATFORMS */
-    .platforms-bar{position:relative;z-index:1;display:flex;gap:8px;overflow-x:auto;padding:16px 20px;scrollbar-width:none;}
+    .platforms-bar{display:flex;gap:8px;overflow-x:auto;padding:16px 20px;scrollbar-width:none;}
     .platforms-bar::-webkit-scrollbar{display:none;}
     .platform-chip{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:30px;border:1px solid #1e2130;background:#111318;color:#5a5f7a;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:all 0.2s;flex-shrink:0;}
     .platform-chip.active{border-color:#6c47ff;background:rgba(108,71,255,0.12);color:#e8eaf2;}
     .platform-chip .dot{width:7px;height:7px;border-radius:50%;}
-
-    /* MAIN */
-    .wrap{position:relative;z-index:1;max-width:700px;margin:0 auto;padding:0 16px 80px;}
+    .wrap{max-width:700px;margin:0 auto;padding:0 16px 80px;}
     .card{background:#111318;border:1px solid #1e2130;border-radius:20px;padding:20px;}
     textarea{width:100%;background:#08090d;border:1px solid #1e2130;border-radius:12px;padding:14px;color:#e8eaf2;font-family:'Space Grotesk',sans-serif;font-size:15px;line-height:1.6;resize:none;min-height:110px;outline:none;transition:border-color 0.2s;}
     textarea:focus{border-color:#6c47ff;}
     textarea::placeholder{color:#5a5f7a;}
     .btn{width:100%;margin-top:14px;padding:15px;background:linear-gradient(135deg,#6c47ff,#ff4fcb);border:none;border-radius:12px;color:white;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;}
     .btn:hover{transform:translateY(-1px);box-shadow:0 8px 32px rgba(108,71,255,0.4);}
-    .btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+    .btn:disabled{opacity:0.6;cursor:not-allowed;}
     .err{background:rgba(255,79,79,0.08);border:1px solid rgba(255,79,79,0.3);border-radius:10px;padding:12px;color:#ff4f4f;font-size:13px;margin-top:10px;display:none;}
     .err.show{display:block;}
     .result{margin-top:18px;display:none;}
@@ -65,22 +56,12 @@
     .drow{display:flex;gap:10px;margin-top:12px;}
     .dlbtn{flex:1;padding:12px;background:linear-gradient(135deg,#6c47ff,#ff4fcb);border:none;border-radius:10px;color:white;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;text-align:center;display:block;}
     .shbtn{flex:1;padding:12px;background:rgba(108,71,255,0.12);border:1px solid rgba(108,71,255,0.3);border-radius:10px;color:#6c47ff;font-size:14px;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
-
-    /* AI INFO */
-    .ai-info{background:#111318;border:1px solid #1e2130;border-radius:16px;padding:18px;margin-top:20px;}
-    .ai-info h3{color:#6c47ff;font-size:16px;margin-bottom:10px;}
-    .ai-info p{color:#aab;font-size:14px;line-height:1.6;margin-bottom:6px;}
-    .ai-info video{width:100%;border-radius:12px;max-height:300px;object-fit:cover;margin-top:10px;}
-
-    /* UPLOAD SECTION */
     .upload-section{background:#111318;border:1px solid #1e2130;border-radius:16px;padding:18px;margin-top:20px;}
-    .upload-section h3{color:#22d9a0;font-size:16px;margin-bottom:10px;}
+    .upload-section h3{font-size:16px;margin-bottom:10px;}
     .upload-section input[type="file"]{color:#e8eaf2;background:#08090d;border:1px solid #1e2130;border-radius:10px;padding:10px;width:100%;cursor:pointer;}
-    .upload-section .upload-btn{margin-top:10px;padding:10px 20px;background:linear-gradient(135deg,#22d9a0,#6c47ff);border:none;border-radius:10px;color:white;font-weight:600;cursor:pointer;}
-    .upload-section .upload-status{margin-top:8px;font-size:13px;color:#5a5f7a;}
-    .upload-section .uploaded-video{width:100%;border-radius:12px;margin-top:10px;display:none;}
-
-    /* PAYMENT MODAL */
+    .upload-btn{margin-top:10px;padding:10px 20px;border:none;border-radius:10px;color:white;font-weight:600;cursor:pointer;}
+    .upload-status{margin-top:8px;font-size:13px;color:#5a5f7a;}
+    .uploaded-video{width:100%;border-radius:12px;margin-top:10px;display:none;}
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;display:none;align-items:flex-end;justify-content:center;}
     .modal-overlay.show{display:flex;}
     .modal{background:#111318;border:1px solid #1e2130;border-radius:24px 24px 0 0;padding:28px 24px;width:100%;max-width:500px;}
@@ -98,9 +79,12 @@
     .pay-btn:hover{border-color:#6c47ff;}
     .pay-btn img{width:32px;height:32px;border-radius:8px;object-fit:contain;}
     .modal-close{width:100%;margin-top:16px;padding:12px;background:transparent;border:1px solid #1e2130;border-radius:12px;color:#5a5f7a;font-family:'Space Grotesk',sans-serif;font-size:14px;cursor:pointer;}
-
     .toast{position:fixed;bottom:20px;right:20px;background:#111318;border:1px solid #6c47ff;border-radius:12px;padding:12px 18px;font-size:13px;z-index:999;transform:translateY(60px);opacity:0;transition:all 0.3s;display:flex;align-items:center;gap:8px;}
     .toast.show{transform:translateY(0);opacity:1;}
+    .ai-info{background:#111318;border:1px solid #1e2130;border-radius:16px;padding:18px;margin-top:20px;}
+    .ai-info h3{color:#6c47ff;font-size:16px;margin-bottom:10px;}
+    .ai-info p{color:#aab;font-size:14px;line-height:1.6;margin-bottom:6px;}
+    .ai-info video{width:100%;border-radius:12px;max-height:300px;object-fit:cover;margin-top:10px;}
   </style>
 </head>
 <body>
@@ -109,7 +93,7 @@
 <div class="login-screen" id="loginScreen">
   <div class="login-bg">
     <video autoplay muted loop playsinline>
-      <source src="https://cdn.pixabay.com/video/2024/03/07/203645-921039088_large.mp4" type="video/mp4"/>
+      <source src="https://cdn.pixabay.com/video/2024/03/07/203645-921039088_large.mp4" type="video/mp4" />
     </video>
   </div>
   <div class="login-overlay"></div>
@@ -118,7 +102,7 @@
     <p class="login-desc">Eng yaxshi AI video generatorlari bitta platformada</p>
     <span class="free-badge">✦ 3 ta bepul kredit</span>
     <button class="google-btn" onclick="loginWithGoogle()">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"/>
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" />
       Google bilan kirish
     </button>
     <p class="login-note">Kirish orqali siz shartlarimizga rozilik bildirasiz</p>
@@ -132,7 +116,7 @@
     <button class="credit-btn" id="creditBtn" onclick="openPayment()">
       💎 <span id="cc">3</span> kredit
     </button>
-    <img class="user-avatar" id="userAvatar" src="" onclick="logout()" title="Chiqish uchun bosing"/>
+    <img class="user-avatar" id="userAvatar" src="" onclick="logout()" title="Chiqish uchun bosing" />
     <div class="badge">v2.0</div>
   </div>
 </nav>
@@ -177,21 +161,32 @@
     <p><strong>Hailuo AI</strong> — yorqin va jonli ranglar, tabiiy harakatlar.</p>
     <p><strong>Seedance</strong> — byudjetli va samarali video, 480p formati.</p>
     <video controls>
-      <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4"/>
+      <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
       Brauzeringiz video qo'llab-quvvatlamaydi.
     </video>
     <p style="color:#5a5f7a;font-size:12px;margin-top:6px;">🎬 Misol video — AI tomonidan yaratilgan namuna</p>
   </div>
 
-  <!-- VIDEO UPLOAD + GENERATE -->
+  <!-- VIDEO UPLOAD -->
   <div class="upload-section">
-    <h3>📤 O'z videongizni yuklang va generatsiya qiling</h3>
-    <input type="file" id="videoUpload" accept="video/*"/>
+    <h3 style="color: #22d9a0;">📤 O'z videongizni yuklang va generatsiya qiling</h3>
+    <input type="file" id="videoUpload" accept="video/*" />
     <br/>
     <textarea id="uploadPrompt" placeholder="Videoni qanday o'zgartirmoqchisiz? Masalan: Make it slow motion, add cinematic colors..." style="width:100%;background:#08090d;border:1px solid #1e2130;border-radius:12px;padding:10px;color:#e8eaf2;font-family:'Space Grotesk',sans-serif;font-size:14px;resize:none;min-height:60px;margin-top:10px;outline:none;"></textarea>
-    <button class="upload-btn" onclick="generateFromVideo()">⚡ Videoni generatsiya qilish</button>
+    <button class="upload-btn" onclick="generateFromVideo()" style="background:linear-gradient(135deg,#22d9a0,#6c47ff);">⚡ Videoni generatsiya qilish</button>
     <div class="upload-status" id="uploadStatus"></div>
     <video class="uploaded-video" id="uploadedVideo" controls></video>
+  </div>
+
+  <!-- IMAGE UPLOAD -->
+  <div class="upload-section">
+    <h3 style="color: #ffd947;">🖼️ Rasmni jonlantirish</h3>
+    <input type="file" id="imageUpload" accept="image/*" />
+    <br/>
+    <textarea id="imagePrompt" placeholder="Rasmni qanday jonlantirmoqchisiz? Masalan: Make it move naturally, add flowing water..." style="width:100%;background:#08090d;border:1px solid #1e2130;border-radius:12px;padding:10px;color:#e8eaf2;font-family:'Space Grotesk',sans-serif;font-size:14px;resize:none;min-height:60px;margin-top:10px;outline:none;"></textarea>
+    <button class="upload-btn" onclick="generateImageToVideo()" style="background:linear-gradient(135deg,#ffd947,#ff6b35);">🎬 Rasmni jonlantirish</button>
+    <div class="upload-status" id="imageUploadStatus"></div>
+    <video class="uploaded-video" id="imageResultVideo" controls></video>
   </div>
 </div>
 
@@ -217,11 +212,11 @@
     </div>
     <div class="pay-methods">
       <button class="pay-btn" onclick="payWithPayme()">
-        <img src="https://play-lh.googleusercontent.com/y0PyKNBXJe9R4S3o6ZOXdJf5wDZgdqLXkNF53JuQxKS60TnAqK3YaBpq7i8wIoHydg=w240-h480-rw" onerror="this.style.display='none'"/>
+        <img src="https://play-lh.googleusercontent.com/y0PyKNBXJe9R4S3o6ZOXdJf5wDZgdqLXkNF53JuQxKS60TnAqK3YaBpq7i8wIoHydg=w240-h480-rw" onerror="this.style.display='none'" />
         Payme orqali to'lash
       </button>
       <button class="pay-btn" onclick="payWithGooglePlay()">
-        <img src="https://play-lh.googleusercontent.com/q0GEMqHpqmSVEtgGKBEQNT7XDoYTPMimJLvMvJ9GrPF8_dTqJEqYvBfaaCfI-pWDFg=w240-h480-rw" onerror="this.style.display='none'"/>
+        <img src="https://play-lh.googleusercontent.com/q0GEMqHpqmSVEtgGKBEQNT7XDoYTPMimJLvMvJ9GrPF8_dTqJEqYvBfaaCfI-pWDFg=w240-h480-rw" onerror="this.style.display='none'" />
         Google Play orqali to'lash
       </button>
     </div>
@@ -254,7 +249,6 @@ let currentUser = null;
 let credits = 0;
 let selectedPlatform = 'minimax';
 let selectedPlan = { credits: 25, price: 30000 };
-let uploadedVideoData = null;
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -276,73 +270,6 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('userAvatar').src = '';
   }
 });
-
-// Video upload handler
-document.getElementById('videoUpload').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  const status = document.getElementById('uploadStatus');
-  const video = document.getElementById('uploadedVideo');
-  
-  if (!file) return;
-  
-  if (file.size > 50 * 1024 * 1024) {
-    status.textContent = '⚠️ Fayl hajmi 50 MB dan oshmasligi kerak!';
-    status.style.color = '#ff4f4f';
-    return;
-  }
-  
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    uploadedVideoData = ev.target.result;
-    video.src = uploadedVideoData;
-    video.style.display = 'block';
-    status.textContent = '✅ Video yuklandi: ' + file.name;
-    status.style.color = '#22d9a0';
-  };
-  reader.readAsDataURL(file);
-});
-
-// Generate from uploaded video
-window.generateFromVideo = async () => {
-  if (!currentUser) { showToast('Avval kiring!', '⚠️'); return; }
-  if (!uploadedVideoData) { showToast('Avval video yuklang!', '⚠️'); return; }
-  
-  const prompt = document.getElementById('uploadPrompt').value.trim();
-  if (!prompt) { showToast('Videoni qanday o\'zgartirishni yozing!', '⚠️'); return; }
-  if (credits <= 0) { showToast('Kredit yetarli emas!', '💎'); openPayment(); return; }
-  
-  showToast('⏳ Video generatsiya qilinmoqda...', '⏳');
-  
-  try {
-    const response = await fetch('/api/generate-from-video', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        video: uploadedVideoData, 
-        prompt: prompt,
-        platform: selectedPlatform 
-      })
-    });
-    
-    const data = await response.json();
-    if (!response.ok || data.error) throw new Error(data.error || 'Server xatosi');
-    
-    credits--;
-    document.getElementById('cc').textContent = credits;
-    await updateDoc(doc(db, 'users', currentUser.uid), { credits: increment(-1) });
-    
-    // Show generated video
-    const video = document.getElementById('uploadedVideo');
-    video.src = data.videoUrl || uploadedVideoData; // Fallback
-    video.style.display = 'block';
-    document.getElementById('uploadStatus').textContent = '✅ Video generatsiya qilindi!';
-    document.getElementById('uploadStatus').style.color = '#22d9a0';
-    showToast('✅ Video generatsiya qilindi!', '🎉');
-    
-  } catch(e) {
-    showToast('Xato: ' + e.message, '❌');
-  }
-};
 
 window.loginWithGoogle = async () => {
   try { await signInWithPopup(auth, provider); }
@@ -380,6 +307,7 @@ window.payWithGooglePlay = () => {
   showToast('Google Play to\'lov tizimi tez kunda!', '🔄');
 };
 
+// PROMPT BASED VIDEO
 window.go = async () => {
   if (!currentUser) { showToast('Avval kiring!', '⚠️'); return; }
   const prompt = document.getElementById('prompt').value.trim();
@@ -448,6 +376,156 @@ function setP(p,t){const pf=document.getElementById('pf');const lt=document.getE
 function showErr(m){const e=document.getElementById('err');e.textContent='⚠️ '+m;e.classList.add('show');}
 function resetBtn(){const b=document.getElementById('btn');b.disabled=false;b.textContent='✦ Video Yaratish';}
 function showToast(m,i='✦'){const t=document.getElementById('toast');document.getElementById('tm').textContent=m;document.getElementById('ti').textContent=i;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+
+// ============================================
+// VIDEO UPLOAD + GENERATE
+// ============================================
+window.generateFromVideo = async () => {
+  if (!currentUser) { showToast('Avval kiring!', '⚠️'); return; }
+  const fileInput = document.getElementById('videoUpload');
+  const prompt = document.getElementById('uploadPrompt').value.trim();
+  const status = document.getElementById('uploadStatus');
+  const video = document.getElementById('uploadedVideo');
+
+  if (!fileInput.files || fileInput.files.length === 0) {
+    status.textContent = '⚠️ Avval video tanlang!';
+    status.style.color = '#ff4f4f';
+    return;
+  }
+  if (!prompt) {
+    status.textContent = '⚠️ Prompt yozing!';
+    status.style.color = '#ff4f4f';
+    return;
+  }
+  if (credits <= 0) {
+    showToast('Kredit yetarli emas!', '💎');
+    openPayment();
+    return;
+  }
+
+  status.textContent = '⏳ Yuklanmoqda...';
+  status.style.color = '#22d9a0';
+
+  try {
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      const videoData = e.target.result;
+      status.textContent = '⏳ Generatsiya boshlandi...';
+      
+      const response = await fetch('/api/generate-from-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video: videoData, prompt: prompt })
+      });
+
+      const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error || 'Server xatosi');
+
+      credits--;
+      document.getElementById('cc').textContent = credits;
+      await updateDoc(doc(db, 'users', currentUser.uid), { credits: increment(-1) });
+
+      status.textContent = '✅ Video saqlandi!';
+      status.style.color = '#22d9a0';
+      video.src = data.videoUrl || videoData;
+      video.style.display = 'block';
+      showToast('Video saqlandi!', '✅');
+    };
+    reader.readAsDataURL(file);
+  } catch(e) {
+    status.textContent = '❌ Xato: ' + e.message;
+    status.style.color = '#ff4f4f';
+    showToast('Xato: ' + e.message, '❌');
+  }
+};
+
+// ============================================
+// IMAGE TO VIDEO
+// ============================================
+window.generateImageToVideo = async () => {
+  if (!currentUser) { showToast('Avval kiring!', '⚠️'); return; }
+  const fileInput = document.getElementById('imageUpload');
+  const prompt = document.getElementById('imagePrompt').value.trim();
+  const status = document.getElementById('imageUploadStatus');
+  const video = document.getElementById('imageResultVideo');
+
+  if (!fileInput.files || fileInput.files.length === 0) {
+    status.textContent = '⚠️ Avval rasm tanlang!';
+    status.style.color = '#ff4f4f';
+    return;
+  }
+  if (!prompt) {
+    status.textContent = '⚠️ Prompt yozing!';
+    status.style.color = '#ff4f4f';
+    return;
+  }
+  if (credits <= 0) {
+    showToast('Kredit yetarli emas!', '💎');
+    openPayment();
+    return;
+  }
+
+  status.textContent = '⏳ Rasm jonlantirilmoqda...';
+  status.style.color = '#ffd947';
+
+  try {
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      const imageData = e.target.result;
+      
+      const response = await fetch('/api/image-to-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageData, prompt: prompt })
+      });
+
+      const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error || 'Server xatosi');
+
+      credits--;
+      document.getElementById('cc').textContent = credits;
+      await updateDoc(doc(db, 'users', currentUser.uid), { credits: increment(-1) });
+
+      status.textContent = '⏳ Generatsiya boshlandi...';
+      status.style.color = '#ffd947';
+
+      // Poll for status
+      let attempts = 0;
+      const maxAttempts = 40;
+      const checkStatus = async () => {
+        const statusRes = await fetch(`/api/check-status?id=${data.id}`);
+        const statusData = await statusRes.json();
+        if (statusData.status === 'succeeded') {
+          const videoUrl = Array.isArray(statusData.output) ? statusData.output[0] : statusData.output;
+          video.src = videoUrl;
+          video.style.display = 'block';
+          status.textContent = '✅ Video tayyor!';
+          status.style.color = '#22d9a0';
+          showToast('Video tayyor! 🎬', '✅');
+        } else if (statusData.status === 'failed') {
+          status.textContent = '❌ Xato: ' + (statusData.error || 'Generatsiya muvaffaqiyatsiz');
+          status.style.color = '#ff4f4f';
+        } else {
+          if (attempts >= maxAttempts) {
+            status.textContent = '⏰ Vaqt tugadi';
+            status.style.color = '#ff4f4f';
+            return;
+          }
+          attempts++;
+          setTimeout(checkStatus, 3000);
+        }
+      };
+      checkStatus();
+    };
+    reader.readAsDataURL(file);
+  } catch(e) {
+    status.textContent = '❌ Xato: ' + e.message;
+    status.style.color = '#ff4f4f';
+    showToast('Xato: ' + e.message, '❌');
+  }
+};
 </script>
 </body>
 </html>
