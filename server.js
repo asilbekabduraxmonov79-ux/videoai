@@ -26,7 +26,6 @@ app.post('/api/generate-video', async (req, res) => {
     const token = process.env.REPLICATE_API_TOKEN;
     if (!token) return res.status(500).json({ error: 'REPLICATE_API_TOKEN yo\'q' });
 
-    // 5 TA AI MODEL
     const models = {
       minimax: {
         version: "minimax/video-01",
@@ -101,19 +100,15 @@ app.get('/api/check-status', async (req, res) => {
 });
 
 // ============================================
-// 3. Yuklangan videoni generatsiya qilish (VIDEO-TO-VIDEO)
+// 3. Yuklangan videoni saqlash (GENERATSIYASIZ)
 // ============================================
 app.post('/api/generate-from-video', async (req, res) => {
   try {
-    const { video, prompt, platform } = req.body;
+    const { video, prompt } = req.body;
     
     if (!video) return res.status(400).json({ error: 'Video yuklanmagan!' });
-    if (!prompt) return res.status(400).json({ error: 'Prompt yozilmagan!' });
 
-    const token = process.env.REPLICATE_API_TOKEN;
-    if (!token) return res.status(500).json({ error: 'REPLICATE_API_TOKEN yo\'q' });
-
-    // 1. Videoni vaqtinchalik faylga saqlash
+    // Videoni vaqtinchalik faylga saqlash
     const base64Data = video.split(',')[1];
     const videoBuffer = Buffer.from(base64Data, 'base64');
     const timestamp = Date.now();
@@ -122,69 +117,14 @@ app.post('/api/generate-from-video', async (req, res) => {
     fs.writeFileSync(filePath, videoBuffer);
 
     console.log('📹 Video saqlandi:', filename);
-    console.log('📝 Prompt:', prompt);
-    console.log('🤖 Platform:', platform);
+    console.log('📝 Prompt:', prompt || 'Yo\'q');
 
-    // 2. Video-to-video generatsiya
-    const response = await fetch('https://api.replicate.com/v1/predictions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        version: "stability-ai/stable-video-diffusion",
-        input: {
-          input_video: `https://videoai-did4.onrender.com/uploads/${filename}`,
-          prompt: prompt,
-          video_length: 25,
-          frames_per_second: 8,
-          motion_bucket_id: 127
-        }
-      })
+    res.json({
+      success: true,
+      message: 'Video saqlandi!',
+      videoUrl: `https://videoai-did4.onrender.com/uploads/${filename}`,
+      filename: filename
     });
-
-    const data = await response.json();
-    if (!response.ok) {
-      return res.status(500).json({ error: data.detail || 'Replicate xatosi' });
-    }
-
-    // 3. Holatni kuzatish
-    let attempts = 0;
-    const maxAttempts = 30;
-    
-    const checkStatus = async () => {
-      const statusRes = await fetch(`https://api.replicate.com/v1/predictions/${data.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const statusData = await statusRes.json();
-      
-      if (statusData.status === 'succeeded') {
-        return { success: true, videoUrl: statusData.output, id: statusData.id };
-      } else if (statusData.status === 'failed') {
-        return { success: false, error: statusData.error || 'Generatsiya muvaffaqiyatsiz' };
-      } else {
-        if (attempts >= maxAttempts) {
-          return { success: false, error: 'Vaqt tugadi' };
-        }
-        attempts++;
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        return checkStatus();
-      }
-    };
-
-    const result = await checkStatus();
-    
-    if (result.success) {
-      res.json({
-        success: true,
-        videoUrl: result.videoUrl,
-        id: result.id,
-        message: 'Video generatsiya qilindi!'
-      });
-    } else {
-      res.status(500).json({ error: result.error });
-    }
 
   } catch (err) {
     console.error('❌ generate-from-video xatosi:', err);
@@ -193,7 +133,7 @@ app.post('/api/generate-from-video', async (req, res) => {
 });
 
 // ============================================
-// 4. Yuklangan videoni saqlash
+// 4. Yuklangan videoni saqlash (ixtiyoriy)
 // ============================================
 app.post('/api/upload-video', async (req, res) => {
   try {
