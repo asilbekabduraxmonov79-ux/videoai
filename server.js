@@ -120,7 +120,7 @@ if (!fs.existsSync(uploadsDir)) {
 app.use('/uploads', express.static(uploadsDir));
 
 // ============================================
-// 1. PROMPT ASOSIDA VIDEO YARATISH
+// 1. PROMPT ASOSIDA VIDEO YARATISH (5 ta AI model)
 // ============================================
 app.post('/api/generate-video', async (req, res) => {
   try {
@@ -335,7 +335,123 @@ app.post('/api/edit-video', async (req, res) => {
 });
 
 // ============================================
-// 5. UMUMIY GENERATSIYA
+// 5. RASMNI JONLANTIRISH + GAPIRISH (LIP-SYNC)
+// ============================================
+app.post('/api/animate-image-with-audio', async (req, res) => {
+  try {
+    const { image, text, uid } = req.body;
+    
+    if (!image) return res.status(400).json({ error: 'Rasm yuklanmagan!' });
+    if (!text) return res.status(400).json({ error: 'Matn yozilmagan!' });
+    if (!uid) return res.status(400).json({ error: 'UID kerak!' });
+
+    // Kredit tekshirish (2 kredit: audio + video)
+    const creditCheck = await checkAndUseCredits(uid, 2);
+    if (!creditCheck.success) {
+      return res.status(400).json({ error: creditCheck.error });
+    }
+
+    const token = process.env.REPLICATE_API_TOKEN;
+    if (!token) return res.status(500).json({ error: 'REPLICATE_API_TOKEN yo\'q' });
+
+    // Rasmni saqlash
+    const base64Data = image.split(',')[1];
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+    const timestamp = Date.now();
+    const imageFilename = `speak_image_${timestamp}.jpg`;
+    const imagePath = path.join(uploadsDir, imageFilename);
+    fs.writeFileSync(imagePath, imageBuffer);
+    const imageUrl = `https://videoai-did4.onrender.com/uploads/${imageFilename}`;
+
+    console.log('🖼️ Rasm saqlandi:', imageFilename);
+    console.log('📝 Matn:', text);
+
+    // 1. Matnni audioga aylantirish (TTS - Edge TTS orqali)
+    // Replicate'da audio yaratish
+    const audioResponse = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        version: "suno-ai/bark",
+        input: {
+          prompt: text,
+          text: text,
+          voice: "v2/en_speaker_6"
+        }
+      })
+    });
+
+    const audioData = await audioResponse.json();
+    if (!audioResponse.ok) {
+      return res.status(500).json({ error: audioData.detail || 'Audio yaratish xatosi' });
+    }
+
+    // Audio tugashini kutish
+    let audioAttempts = 0;
+    let audioUrl = null;
+    while (audioAttempts < 30) {
+      const checkAudio = await fetch(`https://api.replicate.com/v1/predictions/${audioData.id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const audioStatus = await checkAudio.json();
+      
+      if (audioStatus.status === 'succeeded') {
+        audioUrl = audioStatus.output;
+        break;
+      } else if (audioStatus.status === 'failed') {
+        return res.status(500).json({ error: 'Audio yaratish muvaffaqiyatsiz' });
+      }
+      audioAttempts++;
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
+    if (!audioUrl) {
+      return res.status(500).json({ error: 'Audio yaratish vaqti tugadi' });
+    }
+
+    // 2. Rasm + Audio → Gapiruvchi video (Wav2Lip)
+    const videoResponse = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        version: "anotherjesse/wav2lip",
+        input: {
+          face: imageUrl,
+          audio: audioUrl,
+          resize_factor: 1,
+          pads: [0, 10, 0, 0],
+          wav2lip_batch_size: 1
+        }
+      })
+    });
+
+    const videoData = await videoResponse.json();
+    if (!videoResponse.ok) {
+      return res.status(500).json({ error: videoData.detail || 'Video yaratish xatosi' });
+    }
+
+    res.json({
+      success: true,
+      id: videoData.id,
+      status: videoData.status,
+      credits: creditCheck.credits,
+      message: 'Rasm jonlantirilmoqda...'
+    });
+
+  } catch (err) {
+    console.error('❌ animate-image-with-audio xatosi:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// 6. UMUMIY GENERATSIYA
 // ============================================
 app.post('/api/generate-from-video', async (req, res) => {
   try {
@@ -428,7 +544,7 @@ app.post('/api/generate-from-video', async (req, res) => {
 });
 
 // ============================================
-// 6. VIDEONI SAQLASH (BEPUL)
+// 7. VIDEONI SAQLASH (BEPUL)
 // ============================================
 app.post('/api/upload-video', async (req, res) => {
   try {
@@ -453,7 +569,7 @@ app.post('/api/upload-video', async (req, res) => {
 });
 
 // ============================================
-// 7. BARCHA FAYLLARNI KO'RISH
+// 8. BARCHA FAYLLARNI KO'RISH
 // ============================================
 app.get('/api/videos', (req, res) => {
   try {
@@ -472,7 +588,7 @@ app.get('/api/videos', (req, res) => {
 });
 
 // ============================================
-// 8. ROOT
+// 9. ROOT
 // ============================================
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
