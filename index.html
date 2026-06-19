@@ -85,6 +85,7 @@
     .ai-info h3{color:#6c47ff;font-size:16px;margin-bottom:10px;}
     .ai-info p{color:#aab;font-size:14px;line-height:1.6;margin-bottom:6px;}
     .ai-info video{width:100%;border-radius:12px;max-height:300px;object-fit:cover;margin-top:10px;}
+    .beta-badge{background:rgba(255,215,0,0.15);border:1px solid rgba(255,215,0,0.3);color:#ffd947;padding:4px 12px;border-radius:20px;font-size:11px;display:inline-block;margin-left:8px;}
   </style>
 </head>
 <body>
@@ -114,10 +115,10 @@
   <div class="logo">VideoAI.uz</div>
   <div class="nav-right">
     <button class="credit-btn" id="creditBtn" onclick="openPayment()">
-      💎 <span id="cc">3</span> kredit
+      💎 <span id="cc">1</span> kredit
     </button>
     <img class="user-avatar" id="userAvatar" src="" onclick="logout()" title="Chiqish uchun bosing" />
-    <div class="badge">v2.0</div>
+    <div class="badge">v2.0 <span class="beta-badge">BETA</span></div>
   </div>
 </nav>
 
@@ -167,7 +168,7 @@
     <p style="color:#5a5f7a;font-size:12px;margin-top:6px;">🎬 Misol video — AI tomonidan yaratilgan namuna</p>
   </div>
 
-  <!-- VIDEO UPLOAD -->
+  <!-- VIDEO UPLOAD (SINOVDA) -->
   <div class="upload-section">
     <h3 style="color: #22d9a0;">📤 O'z videongizni yuklang va generatsiya qiling</h3>
     <input type="file" id="videoUpload" accept="video/*" />
@@ -246,7 +247,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 let currentUser = null;
-let credits = 0;
+let credits = 1;
 let selectedPlatform = 'minimax';
 let selectedPlan = { credits: 25, price: 30000 };
 
@@ -258,10 +259,10 @@ onAuthStateChanged(auth, async (user) => {
     const userRef = doc(db, 'users', user.uid);
     const snap = await getDoc(userRef);
     if (!snap.exists()) {
-      await setDoc(userRef, { credits: 3, email: user.email, name: user.displayName, created: new Date() });
-      credits = 3;
+      await setDoc(userRef, { credits: 1, email: user.email, name: user.displayName, created: new Date() });
+      credits = 1;
     } else {
-      credits = snap.data().credits || 0;
+      credits = snap.data().credits || 1;
     }
     document.getElementById('cc').textContent = credits;
   } else {
@@ -308,7 +309,7 @@ window.payWithGooglePlay = () => {
 };
 
 // ============================================
-// PROMPT ASOSIDA VIDEO (to'g'rilangan)
+// PROMPT ASOSIDA VIDEO YARATISH
 // ============================================
 window.go = async () => {
   if (!currentUser) { showToast('Avval kiring!', '⚠️'); return; }
@@ -389,79 +390,16 @@ function resetBtn(){const b=document.getElementById('btn');b.disabled=false;b.te
 function showToast(m,i='✦'){const t=document.getElementById('toast');document.getElementById('tm').textContent=m;document.getElementById('ti').textContent=i;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 
 // ============================================
-// VIDEO UPLOAD + GENERATE
+// VIDEO GENERATSIYA (SINOVDA)
 // ============================================
 window.generateFromVideo = async () => {
-  if (!currentUser) { showToast('Avval kiring!', '⚠️'); return; }
-  const fileInput = document.getElementById('videoUpload');
-  const prompt = document.getElementById('uploadPrompt').value.trim();
-  const status = document.getElementById('uploadStatus');
-  const video = document.getElementById('uploadedVideo');
-
-  if (!fileInput.files || fileInput.files.length === 0) {
-    status.textContent = '⚠️ Avval video tanlang!';
-    status.style.color = '#ff4f4f';
-    return;
-  }
-  if (!prompt) {
-    status.textContent = '⚠️ Prompt yozing!';
-    status.style.color = '#ff4f4f';
-    return;
-  }
-  if (credits <= 0) {
-    showToast('Kredit yetarli emas!', '💎');
-    openPayment();
-    return;
-  }
-
-  status.textContent = '⏳ Yuklanmoqda...';
-  status.style.color = '#22d9a0';
-
-  try {
-    const file = fileInput.files[0];
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-      const videoData = e.target.result;
-      status.textContent = '⏳ Generatsiya boshlandi...';
-      
-      const response = await fetch('/api/generate-from-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ video: videoData, prompt: prompt, uid: currentUser.uid })
-      });
-
-      const data = await response.json();
-      if (!response.ok || data.error) throw new Error(data.error || 'Server xatosi');
-
-      if (data.credits !== undefined) {
-        credits = data.credits;
-        document.getElementById('cc').textContent = credits;
-      }
-
-      if (data.videoUrl) {
-        video.src = data.videoUrl;
-        video.style.display = 'block';
-        status.textContent = '✅ Video tayyor!';
-        status.style.color = '#22d9a0';
-        showToast('Video tayyor! 🎬', '✅');
-      } else {
-        status.textContent = '✅ Video saqlandi!';
-        status.style.color = '#22d9a0';
-        video.src = videoData;
-        video.style.display = 'block';
-        showToast('Video saqlandi!', '✅');
-      }
-    };
-    reader.readAsDataURL(file);
-  } catch(e) {
-    status.textContent = '❌ Xato: ' + e.message;
-    status.style.color = '#ff4f4f';
-    showToast('Xato: ' + e.message, '❌');
-  }
+  showToast('⚠️ Hozircha sinovda! Faqat prompt va rasm ishlaydi.', '🔧');
+  document.getElementById('uploadStatus').textContent = '🔧 Hozircha sinovda!';
+  document.getElementById('uploadStatus').style.color = '#ffd947';
 };
 
 // ============================================
-// RASMNI JONLANTIRISH (to'g'rilangan)
+// RASMNI JONLANTIRISH
 // ============================================
 window.generateImageToVideo = async () => {
   if (!currentUser) { showToast('Avval kiring!', '⚠️'); return; }
